@@ -1,6 +1,6 @@
 import type { User, WishList, Item, Family, Purchase, ScrapeLog, AdminStats } from '../types';
 
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+const BASE_URL = import.meta.env.DEV ? 'http://localhost:8080' : '';
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = {
