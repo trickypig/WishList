@@ -10,6 +10,7 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   const token = localStorage.getItem('token');
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
+    headers['X-Auth-Token'] = token;
   }
 
   const res = await fetch(`${BASE_URL}/api${path}`, {

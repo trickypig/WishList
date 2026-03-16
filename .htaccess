@@ -2,8 +2,14 @@
     RewriteEngine On
     RewriteBase /
 
-    # Route /api requests to the api/ folder
-    RewriteRule ^api/(.*)$ api/$1 [L]
+    # Pass Authorization header through to PHP
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    # Route /api requests to the PHP front controller
+    # (unless requesting an actual file like a test script)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^api/(.*)$ api/index.php [QSA,L]
 
     # If the request is for an existing file or directory, serve it directly
     RewriteCond %{REQUEST_FILENAME} !-f
