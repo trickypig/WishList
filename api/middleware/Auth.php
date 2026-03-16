@@ -62,6 +62,27 @@ function authenticate(): array
         ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
         ?? '';
 
+    // Fallback: some Apache configs strip the header from $_SERVER
+    if (empty($authHeader) && function_exists('apache_request_headers')) {
+        $headers = apache_request_headers();
+        $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
+    }
+
+    // Another fallback: check getallheaders()
+    if (empty($authHeader) && function_exists('getallheaders')) {
+        $headers = getallheaders();
+        $authHeader = $headers['Authorization'] ?? $headers['authorization'] ?? '';
+    }
+
+    // Fallback: custom header (some hosts strip Authorization entirely)
+    if (empty($authHeader)) {
+        $customToken = $_SERVER['HTTP_X_AUTH_TOKEN']
+            ?? (function_exists('apache_request_headers') ? (apache_request_headers()['X-Auth-Token'] ?? '') : '');
+        if (!empty($customToken)) {
+            $authHeader = 'Bearer ' . $customToken;
+        }
+    }
+
     if (!preg_match('/^Bearer\s+(.+)$/i', $authHeader, $matches)) {
         Response::unauthorized('Missing or invalid Authorization header');
     }
