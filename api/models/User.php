@@ -16,6 +16,13 @@ class User
         return $stmt->fetch();
     }
 
+    public static function findByIdWithHash(PDO $db, int $id): array|false
+    {
+        $stmt = $db->prepare('SELECT * FROM users WHERE id = :id');
+        $stmt->execute(['id' => $id]);
+        return $stmt->fetch();
+    }
+
     public static function create(PDO $db, string $email, string $password, string $displayName): int
     {
         $hash = password_hash($password, PASSWORD_DEFAULT);
@@ -55,6 +62,19 @@ class User
             'display_name' => $displayName,
             'updated_at'   => date('Y-m-d H:i:s'),
             'id'           => $id,
+        ]);
+    }
+
+    public static function updatePassword(PDO $db, int $id, string $password): void
+    {
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+        $stmt = $db->prepare(
+            'UPDATE users SET password_hash = :password_hash, updated_at = :updated_at WHERE id = :id'
+        );
+        $stmt->execute([
+            'password_hash' => $hash,
+            'updated_at'    => date('Y-m-d H:i:s'),
+            'id'            => $id,
         ]);
     }
 }

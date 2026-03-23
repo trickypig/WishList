@@ -76,4 +76,36 @@ function registerAuthRoutes(Router $router, PDO $db): void
 
         Response::json(['user' => $user]);
     });
+
+    // POST /auth/change-password
+    $router->post('/auth/change-password', function (array $params) use ($db) {
+        $authUser = authenticate();
+        $body = $params['_body'];
+
+        $missing = Validator::required($body, ['current_password', 'new_password', 'confirm_password']);
+        if (!empty($missing)) {
+            Response::error('Missing required fields: ' . implode(', ', $missing));
+        }
+
+        if ($body['new_password'] !== $body['confirm_password']) {
+            Response::error('New passwords do not match');
+        }
+
+        if (!Validator::minLength($body['new_password'], 6)) {
+            Response::error('New password must be at least 6 characters');
+        }
+
+        $user = User::findByIdWithHash($db, $authUser['id']);
+        if (!$user) {
+            Response::notFound('User not found');
+        }
+
+        if (!password_verify($body['current_password'], $user['password_hash'])) {
+            Response::error('Current password is incorrect', 403);
+        }
+
+        User::updatePassword($db, $authUser['id'], $body['new_password']);
+
+        Response::json(['message' => 'Password updated successfully']);
+    });
 }
