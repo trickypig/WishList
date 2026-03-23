@@ -6,31 +6,60 @@
              x:DataType="vm:SettingsViewModel"
              Title="Settings">
 
-    <VerticalStackLayout Spacing="16" Padding="16">
+    <ScrollView>
+        <VerticalStackLayout Spacing="16" Padding="16">
 
-        <Frame Style="{StaticResource CardFrame}">
-            <VerticalStackLayout Spacing="8">
-                <Label Text="Profile" FontAttributes="Bold" FontSize="18" />
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Profile" FontAttributes="Bold" FontSize="18" />
 
-                <Grid ColumnDefinitions="100,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
-                    <Label Grid.Row="0" Grid.Column="0" Text="Name:" FontAttributes="Bold" />
-                    <Label Grid.Row="0" Grid.Column="1" Text="{Binding DisplayName}" />
+                    <Grid ColumnDefinitions="100,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
+                        <Label Grid.Row="0" Grid.Column="0" Text="Name:" FontAttributes="Bold" />
+                        <Label Grid.Row="0" Grid.Column="1" Text="{Binding DisplayName}" />
 
-                    <Label Grid.Row="1" Grid.Column="0" Text="Email:" FontAttributes="Bold" />
-                    <Label Grid.Row="1" Grid.Column="1" Text="{Binding Email}" />
+                        <Label Grid.Row="1" Grid.Column="0" Text="Email:" FontAttributes="Bold" />
+                        <Label Grid.Row="1" Grid.Column="1" Text="{Binding Email}" />
 
-                    <Label Grid.Row="2" Grid.Column="0" Text="Admin:" FontAttributes="Bold" />
-                    <Label Grid.Row="2" Grid.Column="1" Text="{Binding IsAdmin}" />
+                        <Label Grid.Row="2" Grid.Column="0" Text="Admin:" FontAttributes="Bold" />
+                        <Label Grid.Row="2" Grid.Column="1" Text="{Binding IsAdmin}" />
 
-                    <Label Grid.Row="3" Grid.Column="0" Text="Child:" FontAttributes="Bold" />
-                    <Label Grid.Row="3" Grid.Column="1" Text="{Binding IsChild}" />
-                </Grid>
-            </VerticalStackLayout>
-        </Frame>
+                        <Label Grid.Row="3" Grid.Column="0" Text="Child:" FontAttributes="Bold" />
+                        <Label Grid.Row="3" Grid.Column="1" Text="{Binding IsChild}" />
+                    </Grid>
+                </VerticalStackLayout>
+            </Frame>
 
-        <Button Text="Logout"
-                Command="{Binding LogoutCommand}"
-                Style="{StaticResource DangerButton}" />
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="Change Password" FontAttributes="Bold" FontSize="18" />
 
-    </VerticalStackLayout>
+                    <Label Text="{Binding PasswordMessage}"
+                           IsVisible="{Binding PasswordMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                           TextColor="{Binding IsPasswordError, Converter={StaticResource BoolToColorConverter}}" />
+
+                    <Entry Placeholder="Current Password"
+                           Text="{Binding CurrentPassword}"
+                           IsPassword="True" />
+
+                    <Entry Placeholder="New Password"
+                           Text="{Binding NewPassword}"
+                           IsPassword="True" />
+
+                    <Entry Placeholder="Confirm New Password"
+                           Text="{Binding ConfirmPassword}"
+                           IsPassword="True" />
+
+                    <Button Text="{Binding IsChangingPassword, Converter={StaticResource BusyTextConverter}, ConverterParameter='Updating...|Update Password'}"
+                            Command="{Binding ChangePasswordCommand}"
+                            IsEnabled="{Binding IsChangingPassword, Converter={StaticResource InvertedBoolConverter}}"
+                            Style="{StaticResource PrimaryButton}" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <Button Text="Logout"
+                    Command="{Binding LogoutCommand}"
+                    Style="{StaticResource DangerButton}" />
+
+        </VerticalStackLayout>
+    </ScrollView>
 </ContentPage>

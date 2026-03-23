@@ -93,6 +93,17 @@ public class AuthService : IAuthService
         AuthStateChanged?.Invoke();
     }
 
+    public async Task ChangePasswordAsync(string currentPassword, string newPassword, string confirmPassword)
+    {
+        var response = await _httpClient.PostAsJsonAsync("/api/auth/change-password", new
+        {
+            current_password = currentPassword,
+            new_password = newPassword,
+            confirm_password = confirmPassword
+        });
+        await EnsureSuccessAsync(response);
+    }
+
     private void SetAuthHeader(string token)
     {
         _httpClient.DefaultRequestHeaders.Authorization =

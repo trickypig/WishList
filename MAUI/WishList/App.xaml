@@ -15,6 +15,7 @@
             <converters:IsNotNullOrEmptyConverter x:Key="IsNotNullOrEmptyConverter" />
             <converters:BusyTextConverter x:Key="BusyTextConverter" />
             <converters:PriceConverter x:Key="PriceConverter" />
+            <converters:BoolToColorConverter x:Key="BoolToColorConverter" />
 
             <Style x:Key="PrimaryButton" TargetType="Button">
                 <Setter Property="BackgroundColor" Value="{StaticResource Primary}" />
