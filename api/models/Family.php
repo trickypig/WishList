@@ -98,7 +98,7 @@ class Family
     public static function getMembers(PDO $db, int $familyId): array
     {
         $stmt = $db->prepare(
-            'SELECT u.id, u.email, u.display_name, fm.role, fm.joined_at
+            'SELECT u.id, u.email, u.display_name, u.is_child, fm.role, fm.joined_at
              FROM family_members fm
              JOIN users u ON u.id = fm.user_id
              WHERE fm.family_id = :family_id

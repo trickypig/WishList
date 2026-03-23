@@ -11,7 +11,7 @@ class User
 
     public static function findById(PDO $db, int $id): array|false
     {
-        $stmt = $db->prepare('SELECT id, email, display_name, is_admin, created_at, updated_at FROM users WHERE id = :id');
+        $stmt = $db->prepare('SELECT id, email, display_name, is_admin, is_child, created_at, updated_at FROM users WHERE id = :id');
         $stmt->execute(['id' => $id]);
         return $stmt->fetch();
     }
@@ -32,6 +32,18 @@ class User
             'updated_at'    => $now,
         ]);
         return (int) $db->lastInsertId();
+    }
+
+    public static function setChildStatus(PDO $db, int $id, int $isChild): void
+    {
+        $stmt = $db->prepare(
+            'UPDATE users SET is_child = :is_child, updated_at = :updated_at WHERE id = :id'
+        );
+        $stmt->execute([
+            'is_child'   => $isChild ? 1 : 0,
+            'updated_at' => date('Y-m-d H:i:s'),
+            'id'         => $id,
+        ]);
     }
 
     public static function updateProfile(PDO $db, int $id, string $displayName): void

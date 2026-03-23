@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:WishList.ViewModels"
+             xmlns:models="clr-namespace:WishList.Models"
+             x:Class="WishList.Views.FamilyDetailPage"
+             x:DataType="vm:FamilyDetailViewModel"
+             Title="{Binding Family.Name}">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="12" Padding="16">
+
+            <Label Text="{Binding ErrorMessage}" TextColor="Red"
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}" />
+
+            <!-- Invite Code -->
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Invite Code" FontAttributes="Bold" FontSize="16" />
+                    <HorizontalStackLayout Spacing="10">
+                        <Label Text="{Binding Family.InviteCode}" FontSize="20" FontFamily="OpenSansRegular"
+                               VerticalOptions="Center" />
+                        <Button Text="{Binding Copied, Converter={StaticResource BusyTextConverter}, ConverterParameter='Copied!|Copy'}"
+                                Command="{Binding CopyInviteCodeCommand}"
+                                Style="{StaticResource OutlineButton}"
+                                HeightRequest="32" Padding="10,0" />
+                    </HorizontalStackLayout>
+                    <Label Text="Share this code with others so they can join your family group."
+                           TextColor="Gray" FontSize="12" />
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Members -->
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Members" FontAttributes="Bold" FontSize="16" />
+                    <CollectionView ItemsSource="{Binding Members}">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:FamilyMember">
+                                <Grid ColumnDefinitions="*,Auto" Padding="0,6">
+                                    <VerticalStackLayout Grid.Column="0">
+                                        <HorizontalStackLayout Spacing="6">
+                                            <Label Text="{Binding DisplayName}" FontAttributes="Bold" />
+                                            <Label Text="child" TextColor="Orange" FontSize="11"
+                                                   IsVisible="{Binding IsChild}" VerticalOptions="Center" />
+                                        </HorizontalStackLayout>
+                                        <Label Text="{Binding Email}" TextColor="Gray" FontSize="12" />
+                                        <Label Text="{Binding Role}" TextColor="Gray" FontSize="11" />
+                                    </VerticalStackLayout>
+                                    <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Center">
+                                        <Button Text="Toggle Child"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:FamilyDetailViewModel}}, Path=ToggleChildCommand}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource OutlineButton}"
+                                                HeightRequest="28" Padding="6,0" FontSize="10"
+                                                IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:FamilyDetailViewModel}}, Path=IsParent}" />
+                                        <Button Text="Remove"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:FamilyDetailViewModel}}, Path=RemoveMemberCommand}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource DangerButton}"
+                                                HeightRequest="28" Padding="6,0" FontSize="10"
+                                                IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:FamilyDetailViewModel}}, Path=IsAdmin}" />
+                                    </HorizontalStackLayout>
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Invite by Email (admin only) -->
+            <Frame Style="{StaticResource CardFrame}" IsVisible="{Binding IsAdmin}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Invite by Email" FontAttributes="Bold" FontSize="16" />
+                    <HorizontalStackLayout Spacing="8">
+                        <Entry Placeholder="email@example.com" Text="{Binding InviteEmail}"
+                               Keyboard="Email" HorizontalOptions="FillAndExpand" />
+                        <Button Text="Send" Command="{Binding InviteCommand}"
+                                Style="{StaticResource PrimaryButton}"
+                                HeightRequest="36" Padding="12,0" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Domain management (parent only) -->
+            <Frame Style="{StaticResource CardFrame}" IsVisible="{Binding IsParent}">
+                <VerticalStackLayout Spacing="8">
+                    <HorizontalStackLayout Spacing="8">
+                        <Label Text="Allowed Shopping Domains" FontAttributes="Bold" FontSize="16" />
+                        <Button Text="+ Add" Command="{Binding AddDomainCommand}"
+                                Style="{StaticResource OutlineButton}"
+                                HeightRequest="28" Padding="8,0" FontSize="11" />
+                    </HorizontalStackLayout>
+                    <CollectionView ItemsSource="{Binding Domains}"
+                                    EmptyView="No domains configured.">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="models:AllowedDomain">
+                                <Grid ColumnDefinitions="*,Auto,Auto" Padding="0,4">
+                                    <VerticalStackLayout Grid.Column="0">
+                                        <Label Text="{Binding DisplayName}" FontAttributes="Bold" FontSize="14" />
+                                        <Label Text="{Binding Domain}" TextColor="Gray" FontSize="12" />
+                                    </VerticalStackLayout>
+                                    <Label Grid.Column="1" Text="{Binding Source}" TextColor="Gray"
+                                           FontSize="10" VerticalOptions="Center" Margin="4,0" />
+                                    <Button Grid.Column="2" Text="Remove"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:FamilyDetailViewModel}}, Path=RemoveDomainCommand}"
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource DangerButton}"
+                                            HeightRequest="28" Padding="6,0" FontSize="10" />
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Leave button (non-admin) -->
+            <Button Text="Leave Family"
+                    Command="{Binding LeaveCommand}"
+                    Style="{StaticResource DangerButton}"
+                    IsVisible="{Binding IsAdmin, Converter={StaticResource InvertedBoolConverter}}"
+                    Margin="0,8" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

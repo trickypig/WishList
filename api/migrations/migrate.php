@@ -162,6 +162,34 @@ $db->exec("CREATE TABLE IF NOT EXISTS scrape_logs (
 )");
 echo "  [OK] scrape_logs\n";
 
+// ---- default_allowed_domains ----
+$db->exec("CREATE TABLE IF NOT EXISTS default_allowed_domains (
+    id {$autoIncrement},
+    domain VARCHAR(255) NOT NULL UNIQUE,
+    display_name VARCHAR(255) DEFAULT '',
+    icon_url TEXT DEFAULT '',
+    added_by INTEGER NOT NULL,
+    created_at {$timestampType} NOT NULL,
+    FOREIGN KEY (added_by) REFERENCES users(id)
+)");
+echo "  [OK] default_allowed_domains\n";
+
+// ---- family_domain_overrides ----
+$db->exec("CREATE TABLE IF NOT EXISTS family_domain_overrides (
+    id {$autoIncrement},
+    family_id INTEGER NOT NULL,
+    domain VARCHAR(255) NOT NULL,
+    display_name VARCHAR(255) DEFAULT '',
+    icon_url TEXT DEFAULT '',
+    action VARCHAR(10) NOT NULL DEFAULT 'add',
+    added_by INTEGER NOT NULL,
+    created_at {$timestampType} NOT NULL,
+    FOREIGN KEY (family_id) REFERENCES families(id),
+    FOREIGN KEY (added_by) REFERENCES users(id),
+    UNIQUE(family_id, domain)
+)");
+echo "  [OK] family_domain_overrides\n";
+
 // ---- Indexes ----
 $indexes = [
     'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
@@ -178,6 +206,9 @@ $indexes = [
     'CREATE INDEX IF NOT EXISTS idx_scrape_logs_user ON scrape_logs(user_id)',
     'CREATE INDEX IF NOT EXISTS idx_scrape_logs_created ON scrape_logs(created_at)',
     'CREATE INDEX IF NOT EXISTS idx_scrape_logs_host ON scrape_logs(host)',
+    'CREATE INDEX IF NOT EXISTS idx_default_allowed_domains_domain ON default_allowed_domains(domain)',
+    'CREATE INDEX IF NOT EXISTS idx_family_domain_overrides_family ON family_domain_overrides(family_id)',
+    'CREATE INDEX IF NOT EXISTS idx_family_domain_overrides_family_domain ON family_domain_overrides(family_id, domain)',
 ];
 
 foreach ($indexes as $idx) {
@@ -188,6 +219,7 @@ echo "  [OK] indexes\n";
 // ---- Schema updates (safe to re-run) ----
 $alterStatements = [
     "ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE users ADD COLUMN is_child INTEGER NOT NULL DEFAULT 0",
 ];
 
 foreach ($alterStatements as $sql) {
@@ -195,12 +227,49 @@ foreach ($alterStatements as $sql) {
         $db->exec($sql);
         echo "  [OK] " . substr($sql, 0, 60) . "...\n";
     } catch (PDOException $e) {
+        $msg = $e->getMessage();
         // Column already exists — skip silently
-        if (!str_contains($e->getMessage(), 'duplicate') && !str_contains($e->getMessage(), 'already exists') && !str_contains($e->getMessage(), 'Duplicate column')) {
-            // For SQLite: "duplicate column name"
-            // Just ignore — the column exists
+        if (str_contains($msg, 'duplicate') || str_contains($msg, 'already exists') || str_contains($msg, 'Duplicate column')) {
+            echo "  [SKIP] " . substr($sql, 0, 60) . "... (already exists)\n";
+        } else {
+            echo "  [ERROR] " . substr($sql, 0, 60) . "...\n";
+            echo "    -> " . $msg . "\n";
         }
     }
 }
+
+// ---- Seed default allowed domains ----
+$defaultDomains = [
+    ['amazon.com', 'Amazon'],
+    ['ebay.com', 'eBay'],
+    ['target.com', 'Target'],
+    ['bestbuy.com', 'Best Buy'],
+    ['etsy.com', 'Etsy'],
+    ['kohls.com', "Kohl's"],
+    ['macys.com', "Macy's"],
+    ['nordstrom.com', 'Nordstrom'],
+    ['homedepot.com', 'Home Depot'],
+    ['newegg.com', 'Newegg'],
+];
+
+$seedStmt = $db->prepare(
+    'INSERT OR IGNORE INTO default_allowed_domains (domain, display_name, icon_url, added_by, created_at)
+     VALUES (:domain, :display_name, :icon_url, 0, :created_at)'
+);
+
+$now = date('Y-m-d H:i:s');
+foreach ($defaultDomains as [$domain, $displayName]) {
+    try {
+        $seedStmt->execute([
+            'domain'       => $domain,
+            'display_name' => $displayName,
+            'icon_url'     => '',
+            'created_at'   => $now,
+        ]);
+    } catch (PDOException $e) {
+        // Already exists — skip
+    }
+}
+echo "  [OK] seeded default domains\n";
 
 echo "\nMigration complete!\n";

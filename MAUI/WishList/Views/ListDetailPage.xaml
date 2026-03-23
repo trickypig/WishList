@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:WishList.ViewModels"
+             xmlns:models="clr-namespace:WishList.Models"
+             x:Class="WishList.Views.ListDetailPage"
+             x:DataType="vm:ListDetailViewModel"
+             Title="{Binding WishList.Title}">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <VerticalStackLayout Grid.Row="0" Padding="16" Spacing="6"
+                             IsVisible="{Binding IsOwner}">
+            <HorizontalStackLayout Spacing="10">
+                <Button Text="+ Add Item"
+                        Command="{Binding AddItemCommand}"
+                        Style="{StaticResource PrimaryButton}"
+                        HeightRequest="36" Padding="12,0" />
+                <Button Text="Edit List"
+                        Command="{Binding EditListCommand}"
+                        Style="{StaticResource OutlineButton}"
+                        HeightRequest="36" Padding="12,0" />
+                <Button Text="Sharing"
+                        Command="{Binding ChangeSharingCommand}"
+                        Style="{StaticResource OutlineButton}"
+                        HeightRequest="36" Padding="12,0" />
+            </HorizontalStackLayout>
+            <Label Text="{Binding VisibilityLabel}" TextColor="Gray" FontSize="12" />
+        </VerticalStackLayout>
+
+        <RefreshView Grid.Row="1"
+                     IsRefreshing="{Binding IsRefreshing}"
+                     Command="{Binding LoadListCommand}">
+            <CollectionView ItemsSource="{Binding Items}"
+                            EmptyView="No items in this list yet.">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:Item">
+                        <Frame Style="{StaticResource CardFrame}" Margin="16,4">
+                            <Grid ColumnDefinitions="80,*,Auto" RowDefinitions="Auto,Auto,Auto">
+
+                                <!-- Image -->
+                                <Image Grid.Row="0" Grid.Column="0" Grid.RowSpan="3"
+                                       Source="{Binding ImageUrl}"
+                                       WidthRequest="70" HeightRequest="70"
+                                       Aspect="AspectFill" />
+
+                                <!-- Name + description -->
+                                <Label Grid.Row="0" Grid.Column="1"
+                                       Text="{Binding Name}"
+                                       FontSize="16" FontAttributes="Bold" />
+                                <Label Grid.Row="1" Grid.Column="1"
+                                       Text="{Binding Description}"
+                                       TextColor="Gray" FontSize="13" LineBreakMode="TailTruncation" />
+                                <HorizontalStackLayout Grid.Row="2" Grid.Column="1" Spacing="8">
+                                    <Label Text="{Binding Price, Converter={StaticResource PriceConverter}}"
+                                           FontSize="14" TextColor="{StaticResource Primary}"
+                                           IsVisible="{Binding Price, Converter={StaticResource IsNotNullOrEmptyConverter}}" />
+                                    <Label Text="{Binding QuantityDesired, StringFormat='Qty: {0}'}"
+                                           FontSize="12" TextColor="Gray" />
+                                    <Label Text="{Binding TotalPurchased, StringFormat='({0} purchased)'}"
+                                           FontSize="12" TextColor="Green" />
+                                </HorizontalStackLayout>
+
+                                <!-- Actions -->
+                                <VerticalStackLayout Grid.Row="0" Grid.Column="2" Grid.RowSpan="3"
+                                                     VerticalOptions="Center" Spacing="4">
+                                    <!-- Owner actions -->
+                                    <HorizontalStackLayout Spacing="4"
+                                                           IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=IsOwner}">
+                                        <Button Text="Edit"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=EditItemCommand}"
+                                                CommandParameter="{Binding}"
+                                                Style="{StaticResource OutlineButton}"
+                                                HeightRequest="30" Padding="8,0" FontSize="11" />
+                                        <Button Text="Del"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=DeleteItemCommand}"
+                                                CommandParameter="{Binding}"
+                                                BackgroundColor="#E53935" TextColor="White"
+                                                HeightRequest="30" Padding="8,0" FontSize="11" />
+                                    </HorizontalStackLayout>
+                                    <HorizontalStackLayout Spacing="2"
+                                                           IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=IsOwner}">
+                                        <Button Text="Up"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=MoveItemUpCommand}"
+                                                CommandParameter="{Binding}"
+                                                HeightRequest="28" Padding="6,0" FontSize="10" />
+                                        <Button Text="Dn"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=MoveItemDownCommand}"
+                                                CommandParameter="{Binding}"
+                                                HeightRequest="28" Padding="6,0" FontSize="10" />
+                                    </HorizontalStackLayout>
+
+                                    <!-- Non-owner purchase actions -->
+                                    <Button Text="Buy"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=PurchaseItemCommand}"
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource PrimaryButton}"
+                                            HeightRequest="30" Padding="8,0" FontSize="11" />
+                                </VerticalStackLayout>
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <Label Grid.Row="1" Text="{Binding ErrorMessage}" TextColor="Red"
+               IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+               Margin="16,0" />
+    </Grid>
+</ContentPage>

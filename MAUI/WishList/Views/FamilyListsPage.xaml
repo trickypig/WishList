@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:WishList.ViewModels"
+             xmlns:models="clr-namespace:WishList.Models"
+             x:Class="WishList.Views.FamilyListsPage"
+             x:DataType="vm:FamilyListsViewModel"
+             Title="{Binding FamilyName, StringFormat='{0} - Lists'}">
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}"
+                 Command="{Binding LoadListsCommand}">
+        <CollectionView ItemsSource="{Binding Lists}"
+                        EmptyView="No lists shared with this family yet.">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:WishListModel">
+                    <Frame Style="{StaticResource CardFrame}" Margin="16,4">
+                        <Frame.GestureRecognizers>
+                            <TapGestureRecognizer
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:FamilyListsViewModel}}, Path=OpenListCommand}"
+                                CommandParameter="{Binding}" />
+                        </Frame.GestureRecognizers>
+                        <VerticalStackLayout>
+                            <Label Text="{Binding Title}" FontSize="18" FontAttributes="Bold" />
+                            <Label Text="{Binding OwnerName, StringFormat='by {0}'}" TextColor="Gray" FontSize="13" />
+                            <Label Text="{Binding Description}" TextColor="Gray" FontSize="12"
+                                   LineBreakMode="TailTruncation" />
+                        </VerticalStackLayout>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </RefreshView>
+</ContentPage>

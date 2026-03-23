@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:WishList.ViewModels"
+             xmlns:models="clr-namespace:WishList.Models"
+             x:Class="WishList.Views.DashboardPage"
+             x:DataType="vm:DashboardViewModel"
+             Title="My Lists">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <HorizontalStackLayout Grid.Row="0" Padding="16" Spacing="10">
+            <Label Text="{Binding UserDisplayName, StringFormat='Welcome, {0}!'}"
+                   FontSize="20" FontAttributes="Bold" VerticalOptions="Center" />
+            <Button Text="+ New List"
+                    Command="{Binding CreateListCommand}"
+                    Style="{StaticResource PrimaryButton}"
+                    HeightRequest="36" Padding="12,0"
+                    HorizontalOptions="EndAndExpand" />
+        </HorizontalStackLayout>
+
+        <RefreshView Grid.Row="1"
+                     IsRefreshing="{Binding IsRefreshing}"
+                     Command="{Binding LoadListsCommand}">
+            <CollectionView ItemsSource="{Binding Lists}"
+                            EmptyView="No wish lists yet. Tap '+ New List' to create one!">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:WishListModel">
+                        <Frame Style="{StaticResource CardFrame}" Margin="16,4">
+                            <Frame.GestureRecognizers>
+                                <TapGestureRecognizer
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:DashboardViewModel}}, Path=OpenListCommand}"
+                                    CommandParameter="{Binding}" />
+                            </Frame.GestureRecognizers>
+                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                                <Label Grid.Row="0" Grid.Column="0"
+                                       Text="{Binding Title}"
+                                       FontSize="18" FontAttributes="Bold" />
+                                <Label Grid.Row="1" Grid.Column="0"
+                                       Text="{Binding Description}"
+                                       TextColor="Gray" LineBreakMode="TailTruncation" />
+                                <VerticalStackLayout Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
+                                                     VerticalOptions="Center" Spacing="4">
+                                    <Label Text="{Binding ItemCount, StringFormat='{0} items'}"
+                                           TextColor="Gray" FontSize="12" HorizontalOptions="End" />
+                                    <Button Text="Delete"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:DashboardViewModel}}, Path=DeleteListCommand}"
+                                            CommandParameter="{Binding}"
+                                            Style="{StaticResource DangerButton}"
+                                            HeightRequest="30" Padding="8,0" FontSize="12" />
+                                </VerticalStackLayout>
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <Label Grid.Row="1" Text="{Binding ErrorMessage}" TextColor="Red"
+               IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+               Margin="16,0" />
+    </Grid>
+</ContentPage>

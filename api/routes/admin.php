@@ -107,6 +107,48 @@ function registerAdminRoutes(Router $router, PDO $db): void
         Response::json(['log' => $log]);
     });
 
+    // GET /admin/domains - list all global default domains
+    $router->get('/admin/domains', function (array $params) use ($db) {
+        requireAdmin();
+        $domains = AllowedDomain::getDefaults($db);
+        Response::json(['domains' => $domains]);
+    });
+
+    // POST /admin/domains - add a global default domain
+    $router->post('/admin/domains', function (array $params) use ($db) {
+        $user = requireAdmin();
+        $body = $params['_body'];
+
+        $missing = Validator::required($body, ['domain']);
+        if (!empty($missing)) {
+            Response::error('Missing required fields: ' . implode(', ', $missing));
+        }
+
+        $domainId = AllowedDomain::addDefault(
+            $db,
+            $body['domain'],
+            $body['display_name'] ?? '',
+            $body['icon_url'] ?? '',
+            $user['id']
+        );
+
+        $domain = AllowedDomain::getDefaultById($db, $domainId);
+        Response::json(['domain' => $domain], 201);
+    });
+
+    // DELETE /admin/domains/{id} - remove a global default domain
+    $router->delete('/admin/domains/{id}', function (array $params) use ($db) {
+        requireAdmin();
+        $id = (int) $params['id'];
+
+        $removed = AllowedDomain::removeDefault($db, $id);
+        if (!$removed) {
+            Response::notFound('Domain not found');
+        }
+
+        Response::json(['message' => 'Domain removed']);
+    });
+
     // GET /admin/stats - basic admin stats
     $router->get('/admin/stats', function (array $params) use ($db) {
         requireAdmin();

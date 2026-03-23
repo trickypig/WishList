@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:WishList.ViewModels"
+             x:Class="WishList.Views.LoginPage"
+             x:DataType="vm:LoginViewModel"
+             Title="Login"
+             Shell.NavBarIsVisible="False">
+
+    <ScrollView>
+        <VerticalStackLayout Spacing="20" Padding="30" VerticalOptions="Center" MaximumWidthRequest="400">
+
+            <Label Text="WishList"
+                   FontSize="32"
+                   FontAttributes="Bold"
+                   HorizontalOptions="Center"
+                   TextColor="{StaticResource Primary}" />
+
+            <Label Text="Sign in to your account"
+                   FontSize="16"
+                   HorizontalOptions="Center"
+                   TextColor="Gray" />
+
+            <Label Text="{Binding ErrorMessage}"
+                   TextColor="Red"
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+                   HorizontalOptions="Center" />
+
+            <Entry Placeholder="Email"
+                   Text="{Binding Email}"
+                   Keyboard="Email"
+                   ReturnType="Next" />
+
+            <Entry Placeholder="Password"
+                   Text="{Binding Password}"
+                   IsPassword="True"
+                   ReturnType="Done"
+                   ReturnCommand="{Binding LoginCommand}" />
+
+            <Button Text="{Binding IsBusy, Converter={StaticResource BusyTextConverter}, ConverterParameter='Signing in...|Sign In'}"
+                    Command="{Binding LoginCommand}"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"
+                    Style="{StaticResource PrimaryButton}" />
+
+            <Button Text="Create an account"
+                    Command="{Binding GoToRegisterCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="{StaticResource Primary}" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

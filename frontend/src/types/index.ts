@@ -3,6 +3,7 @@ export interface User {
   email: string;
   display_name: string;
   is_admin: number;
+  is_child: number;
 }
 
 export interface ScrapeLog {
@@ -83,6 +84,14 @@ export interface FamilyMember {
   display_name: string;
   email: string;
   role: string;
+  is_child?: number;
+}
+
+export interface AllowedDomain {
+  domain: string;
+  display_name: string;
+  icon_url: string;
+  source: 'default' | 'family';
 }
 
 export interface Purchase {

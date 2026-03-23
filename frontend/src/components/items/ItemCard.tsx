@@ -41,7 +41,7 @@ export default function ItemCard({
           <div className="item-header">
             <h4 className="item-name">{item.name}</h4>
             {item.price != null && item.price > 0 && (
-              <span className="item-price">${item.price.toFixed(2)}</span>
+              <span className="item-price">${Number(item.price).toFixed(2)}</span>
             )}
           </div>
           {item.description && <p className="item-desc">{item.description}</p>}

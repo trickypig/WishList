@@ -67,6 +67,10 @@ export default function AdminDashboardPage() {
           <h3>Scrape Logs</h3>
           <p className="text-muted">View URL scraping history, errors, and raw HTML</p>
         </Link>
+        <Link to="/admin/domains" className="card admin-nav-card">
+          <h3>Allowed Domains</h3>
+          <p className="text-muted">Manage global default shopping domains for all families</p>
+        </Link>
       </div>
     </div>
   );

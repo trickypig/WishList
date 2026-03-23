@@ -13,6 +13,7 @@ import FamilyListsPage from './pages/FamilyListsPage';
 import SettingsPage from './pages/SettingsPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import ScrapeLogsPage from './pages/admin/ScrapeLogsPage';
+import AdminDomainsPage from './pages/admin/AdminDomainsPage';
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
             <Route element={<AdminRoute />}>
               <Route path="/admin" element={<AdminDashboardPage />} />
               <Route path="/admin/scrape-logs" element={<ScrapeLogsPage />} />
+              <Route path="/admin/domains" element={<AdminDomainsPage />} />
             </Route>
           </Routes>
         </div>

@@ -37,6 +37,7 @@ function generateToken(array $user): string
         'email'        => $user['email'],
         'display_name' => $user['display_name'],
         'is_admin'     => (int) ($user['is_admin'] ?? 0),
+        'is_child'     => (int) ($user['is_child'] ?? 0),
         'iat'          => time(),
         'exp'          => time() + (30 * 24 * 60 * 60), // 30 days
     ]));
@@ -58,8 +59,10 @@ function authenticate(): array
     $secret = $config['jwt_secret'];
 
     // Extract token from Authorization header
+    // Check multiple variants because Apache rewrites prefix with REDIRECT_
     $authHeader = $_SERVER['HTTP_AUTHORIZATION']
         ?? $_SERVER['REDIRECT_HTTP_AUTHORIZATION']
+        ?? $_SERVER['REDIRECT_REDIRECT_HTTP_AUTHORIZATION']
         ?? '';
 
     // Fallback: some Apache configs strip the header from $_SERVER
@@ -77,7 +80,10 @@ function authenticate(): array
     // Fallback: custom header (some hosts strip Authorization entirely)
     if (empty($authHeader)) {
         $customToken = $_SERVER['HTTP_X_AUTH_TOKEN']
-            ?? (function_exists('apache_request_headers') ? (apache_request_headers()['X-Auth-Token'] ?? '') : '');
+            ?? $_SERVER['REDIRECT_HTTP_X_AUTH_TOKEN']
+            ?? $_SERVER['REDIRECT_REDIRECT_HTTP_X_AUTH_TOKEN']
+            ?? (function_exists('apache_request_headers') ? (apache_request_headers()['X-Auth-Token'] ?? '') : '')
+            ?? (function_exists('getallheaders') ? (getallheaders()['X-Auth-Token'] ?? '') : '');
         if (!empty($customToken)) {
             $authHeader = 'Bearer ' . $customToken;
         }
@@ -122,6 +128,7 @@ function authenticate(): array
         'email'        => $payload['email'],
         'display_name' => $payload['display_name'],
         'is_admin'     => (int) ($payload['is_admin'] ?? 0),
+        'is_child'     => (int) ($payload['is_child'] ?? 0),
     ];
 }
 

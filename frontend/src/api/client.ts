@@ -1,4 +1,4 @@
-import type { User, WishList, Item, Family, Purchase, ScrapeLog, AdminStats } from '../types';
+import type { User, WishList, Item, Family, Purchase, ScrapeLog, AdminStats, AllowedDomain } from '../types';
 
 const BASE_URL = import.meta.env.DEV ? 'http://localhost:8080' : '';
 
@@ -153,6 +153,23 @@ export function removeFamilyMember(familyId: number, userId: number) {
   return apiClient.delete<void>(`/families/${familyId}/members/${userId}`);
 }
 
+export function setChildStatus(familyId: number, userId: number, isChild: number) {
+  return apiClient.put<{ user: User }>(`/families/${familyId}/members/${userId}/child-status`, { is_child: isChild });
+}
+
+// Family Domains
+export function getFamilyDomains(familyId: number) {
+  return apiClient.get<{ domains: AllowedDomain[] }>(`/families/${familyId}/domains`);
+}
+
+export function addFamilyDomain(familyId: number, data: { domain: string; display_name?: string; icon_url?: string }) {
+  return apiClient.post<{ id: number }>(`/families/${familyId}/domains`, data);
+}
+
+export function removeFamilyDomain(familyId: number, domain: string) {
+  return apiClient.delete<void>(`/families/${familyId}/domains/${domain}`);
+}
+
 // URL Scraping
 export function scrapeUrl(url: string) {
   return apiClient.post<{
@@ -165,6 +182,19 @@ export function scrapeUrl(url: string) {
 }
 
 // Admin
+// Admin Domains
+export function getAdminDomains() {
+  return apiClient.get<{ domains: Array<{ id: number; domain: string; display_name: string; icon_url: string; added_by: number; created_at: string }> }>('/admin/domains');
+}
+
+export function addAdminDomain(data: { domain: string; display_name?: string; icon_url?: string }) {
+  return apiClient.post<{ domain: { id: number; domain: string; display_name: string; icon_url: string } }>('/admin/domains', data);
+}
+
+export function removeAdminDomain(id: number) {
+  return apiClient.delete<void>(`/admin/domains/${id}`);
+}
+
 export function getAdminStats() {
   return apiClient.get<{ stats: AdminStats }>('/admin/stats');
 }

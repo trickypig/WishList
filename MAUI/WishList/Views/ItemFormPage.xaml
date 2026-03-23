@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:WishList.ViewModels"
+             xmlns:models="clr-namespace:WishList.Models"
+             x:Class="WishList.Views.ItemFormPage"
+             x:DataType="vm:ItemFormViewModel"
+             Title="{Binding PageTitle}">
+
+    <ScrollView Padding="16">
+        <VerticalStackLayout Spacing="12" MaximumWidthRequest="600">
+
+            <Label Text="{Binding ErrorMessage}" TextColor="Red"
+                   IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}" />
+
+            <!-- URL Scraping -->
+            <Frame Style="{StaticResource CardFrame}">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="Paste URL to auto-fill" FontAttributes="Bold" />
+                    <Entry Placeholder="https://www.amazon.com/..."
+                           Text="{Binding ScrapeUrl}" />
+                    <HorizontalStackLayout Spacing="8">
+                        <Button Text="{Binding IsScraping, Converter={StaticResource BusyTextConverter}, ConverterParameter='Scraping...|Scrape URL'}"
+                                Command="{Binding ScrapeCommand}"
+                                IsEnabled="{Binding IsScraping, Converter={StaticResource InvertedBoolConverter}}"
+                                Style="{StaticResource PrimaryButton}"
+                                HeightRequest="36" Padding="12,0" />
+                        <!-- Windows-only: Browse for Item button -->
+                        <Button Text="Browse for Item"
+                                Clicked="OnBrowseForItemClicked"
+                                Style="{StaticResource OutlineButton}"
+                                HeightRequest="36" Padding="12,0"
+                                IsVisible="{OnPlatform WinUI=True, Default=False}" />
+                    </HorizontalStackLayout>
+                </VerticalStackLayout>
+            </Frame>
+
+            <!-- Item fields -->
+            <Label Text="Name" FontAttributes="Bold" />
+            <Entry Placeholder="Item name" Text="{Binding Name}" />
+
+            <Label Text="Description" FontAttributes="Bold" />
+            <Editor Placeholder="Description (optional)" Text="{Binding Description}"
+                    HeightRequest="80" />
+
+            <Label Text="Price" FontAttributes="Bold" />
+            <Entry Placeholder="0.00" Text="{Binding PriceText}" Keyboard="Numeric" />
+
+            <Label Text="Quantity" FontAttributes="Bold" />
+            <Entry Placeholder="1" Text="{Binding QuantityDesired}" Keyboard="Numeric" />
+
+            <Label Text="Image URL" FontAttributes="Bold" />
+            <Entry Placeholder="https://..." Text="{Binding ImageUrl}" />
+
+            <!-- Image preview -->
+            <Image Source="{Binding ImageUrl}" HeightRequest="120" Aspect="AspectFit"
+                   IsVisible="{Binding ImageUrl, Converter={StaticResource IsNotNullOrEmptyConverter}}" />
+
+            <!-- Links -->
+            <Label Text="Store Links" FontAttributes="Bold" FontSize="16" />
+            <CollectionView ItemsSource="{Binding Links}">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:ItemLink">
+                        <HorizontalStackLayout Spacing="8" Padding="0,4">
+                            <Entry Placeholder="URL" Text="{Binding Url}" HorizontalOptions="FillAndExpand" />
+                            <Entry Placeholder="Store" Text="{Binding StoreName}" WidthRequest="100" />
+                            <Button Text="X"
+                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ItemFormViewModel}}, Path=RemoveLinkCommand}"
+                                    CommandParameter="{Binding}"
+                                    Style="{StaticResource DangerButton}"
+                                    HeightRequest="36" WidthRequest="36" Padding="0" />
+                        </HorizontalStackLayout>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Button Text="+ Add Link" Command="{Binding AddLinkCommand}"
+                    Style="{StaticResource OutlineButton}" HeightRequest="36" />
+
+            <!-- Save button -->
+            <Button Text="{Binding IsBusy, Converter={StaticResource BusyTextConverter}, ConverterParameter='Saving...|Save Item'}"
+                    Command="{Binding SaveCommand}"
+                    IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"
+                    Style="{StaticResource PrimaryButton}"
+                    Margin="0,16,0,32" />
+
+        </VerticalStackLayout>
+    </ScrollView>
+</ContentPage>

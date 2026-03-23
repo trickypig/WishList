@@ -27,6 +27,7 @@ require_once __DIR__ . '/models/WishList.php';
 require_once __DIR__ . '/models/Item.php';
 require_once __DIR__ . '/models/Family.php';
 require_once __DIR__ . '/models/Purchase.php';
+require_once __DIR__ . '/models/AllowedDomain.php';
 
 // Routes
 require_once __DIR__ . '/routes/auth.php';

@@ -2,6 +2,13 @@
     RewriteEngine On
     RewriteBase /api/
 
+    # Pass Authorization and custom auth headers through to PHP
+    RewriteCond %{HTTP:Authorization} .
+    RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+    RewriteCond %{HTTP:X-Auth-Token} .
+    RewriteRule .* - [E=HTTP_X_AUTH_TOKEN:%{HTTP:X-Auth-Token}]
+
     # If the request is for an existing file or directory, serve it directly
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d

@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:WishList.ViewModels"
+             xmlns:models="clr-namespace:WishList.Models"
+             x:Class="WishList.Views.FamiliesPage"
+             x:DataType="vm:FamiliesViewModel"
+             Title="Families">
+
+    <Grid RowDefinitions="Auto,*">
+
+        <HorizontalStackLayout Grid.Row="0" Padding="16" Spacing="10">
+            <Button Text="+ Create Family"
+                    Command="{Binding CreateFamilyCommand}"
+                    Style="{StaticResource PrimaryButton}"
+                    HeightRequest="36" Padding="12,0" />
+            <Button Text="Join Family"
+                    Command="{Binding JoinFamilyCommand}"
+                    Style="{StaticResource OutlineButton}"
+                    HeightRequest="36" Padding="12,0" />
+        </HorizontalStackLayout>
+
+        <RefreshView Grid.Row="1"
+                     IsRefreshing="{Binding IsRefreshing}"
+                     Command="{Binding LoadFamiliesCommand}">
+            <CollectionView ItemsSource="{Binding Families}"
+                            EmptyView="No families yet. Create or join one!">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="models:Family">
+                        <Frame Style="{StaticResource CardFrame}" Margin="16,4">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <VerticalStackLayout Grid.Column="0">
+                                    <VerticalStackLayout.GestureRecognizers>
+                                        <TapGestureRecognizer
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:FamiliesViewModel}}, Path=OpenFamilyCommand}"
+                                            CommandParameter="{Binding}" />
+                                    </VerticalStackLayout.GestureRecognizers>
+                                    <Label Text="{Binding Name}" FontSize="18" FontAttributes="Bold" />
+                                    <Label Text="{Binding MemberCount, StringFormat='{0} members'}"
+                                           TextColor="Gray" FontSize="13" />
+                                    <Label Text="{Binding EffectiveRole, StringFormat='Role: {0}'}"
+                                           TextColor="Gray" FontSize="12" />
+                                </VerticalStackLayout>
+                                <Button Grid.Column="1" Text="View Lists"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:FamiliesViewModel}}, Path=ViewFamilyListsCommand}"
+                                        CommandParameter="{Binding}"
+                                        Style="{StaticResource OutlineButton}"
+                                        HeightRequest="30" Padding="8,0" FontSize="11"
+                                        VerticalOptions="Center" />
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <Label Grid.Row="1" Text="{Binding ErrorMessage}" TextColor="Red"
+               IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}"
+               Margin="16,0" />
+    </Grid>
+</ContentPage>
