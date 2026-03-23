@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Gift box body -->
+  <rect x="56" y="240" width="400" height="232" rx="16" fill="#E53935"/>
+  <!-- Box lid -->
+  <rect x="40" y="192" width="432" height="64" rx="12" fill="#C62828"/>
+  <!-- Vertical ribbon -->
+  <rect x="224" y="192" width="64" height="280" fill="#FDD835"/>
+  <!-- Horizontal ribbon -->
+  <rect x="40" y="252" width="432" height="48" fill="#FDD835"/>
+  <!-- Ribbon cross highlight -->
+  <rect x="224" y="252" width="64" height="48" fill="#F9A825"/>
+  <!-- Bow - left loop -->
+  <ellipse cx="196" cy="160" rx="72" ry="56" fill="#FDD835" transform="rotate(-20 196 160)"/>
+  <ellipse cx="196" cy="160" rx="48" ry="36" fill="#E53935" transform="rotate(-20 196 160)"/>
+  <!-- Bow - right loop -->
+  <ellipse cx="316" cy="160" rx="72" ry="56" fill="#FDD835" transform="rotate(20 316 160)"/>
+  <ellipse cx="316" cy="160" rx="48" ry="36" fill="#E53935" transform="rotate(20 316 160)"/>
+  <!-- Bow center knot -->
+  <ellipse cx="256" cy="192" rx="36" ry="28" fill="#F9A825"/>
+  <!-- Bow tails -->
+  <path d="M140 120 Q170 170 224 192 L200 192 Q160 170 130 110Z" fill="#FBC02D"/>
+  <path d="M372 120 Q342 170 288 192 L312 192 Q352 170 382 110Z" fill="#FBC02D"/>
+</svg>

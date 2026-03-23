@@ -15,3 +15,6 @@ cd frontend
 npm run dev
 # - Run locally
 http://localhost:5173
+
+## MAUI app -- Production
+dotnet publish -f net10.0-windows10.0.19041.0 -c Release
