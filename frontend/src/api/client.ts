@@ -57,6 +57,10 @@ export function getMe() {
   return apiClient.get<{ user: User }>('/auth/me');
 }
 
+export function changePassword(current_password: string, new_password: string, confirm_password: string) {
+  return apiClient.post<{ message: string }>('/auth/change-password', { current_password, new_password, confirm_password });
+}
+
 // Lists
 export function getLists() {
   return apiClient.get<{ lists: WishList[] }>('/lists');
