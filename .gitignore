@@ -1,0 +1,26 @@
+data/
+.env
+node_modules/
+frontend/dist/
+vendor/
+docs/
+.claude/settings.local.json
+.vscode/sftp.json
+api/migrations/reset-password.php
+
+# ---- .NET / MAUI build artifacts ----
+[Bb]in/
+[Oo]bj/
+.vs/
+*.user
+*.suo
+*.userprefs
+
+# ---- Local databases ----
+*.db
+*.sqlite
+*.sqlite3
+
+# ---- OS cruft ----
+.DS_Store
+Thumbs.db
