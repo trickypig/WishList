@@ -220,7 +220,14 @@ $indexes = [
 ];
 
 foreach ($indexes as $idx) {
-    $db->exec($idx);
+    try {
+        // MySQL has no CREATE INDEX IF NOT EXISTS; it reports an existing index as a duplicate instead.
+        $db->exec($isSqlite ? $idx : str_replace('IF NOT EXISTS ', '', $idx));
+    } catch (PDOException $e) {
+        if (!str_contains($e->getMessage(), 'Duplicate key name')) {
+            throw $e;
+        }
+    }
 }
 echo "  [OK] indexes\n";
 
@@ -261,8 +268,9 @@ $defaultDomains = [
     ['newegg.com', 'Newegg'],
 ];
 
+$insertIgnore = $isSqlite ? 'INSERT OR IGNORE' : 'INSERT IGNORE';
 $seedStmt = $db->prepare(
-    'INSERT OR IGNORE INTO default_allowed_domains (domain, display_name, icon_url, added_by, created_at)
+    $insertIgnore . ' INTO default_allowed_domains (domain, display_name, icon_url, added_by, created_at)
      VALUES (:domain, :display_name, :icon_url, 0, :created_at)'
 );
 
