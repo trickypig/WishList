@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, type DragEvent } from 'react';
+import { useState, useEffect, useCallback, type ClipboardEvent, type DragEvent, type FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
@@ -9,6 +9,15 @@ import type { WishList, Item } from '../types';
 import ItemCard from '../components/items/ItemCard';
 import ItemForm from '../components/items/ItemForm';
 import SharingModal from '../components/lists/SharingModal';
+
+function isWebUrl(text: string): boolean {
+  try {
+    const { protocol } = new URL(text);
+    return protocol === 'http:' || protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
 
 export default function ListDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -25,6 +34,7 @@ export default function ListDetailPage() {
   const [showSharing, setShowSharing] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [scraping, setScraping] = useState(false);
+  const [urlInput, setUrlInput] = useState('');
   const [prefill, setPrefill] = useState<{
     name?: string;
     price?: number | null;
@@ -110,6 +120,30 @@ export default function ListDetailPage() {
       return;
     }
 
+    await fillFromUrl(url);
+  }
+
+  function handleUrlPaste(e: ClipboardEvent<HTMLInputElement>) {
+    const pasted = e.clipboardData.getData('text').trim();
+    // Anything that isn't a full URL just lands in the box as normal text
+    if (isWebUrl(pasted)) {
+      e.preventDefault();
+      fillFromUrl(pasted);
+    }
+  }
+
+  function handleUrlSubmit(e: FormEvent) {
+    e.preventDefault();
+    const url = urlInput.trim();
+    if (!isWebUrl(url)) {
+      setError('Please enter a full link starting with http:// or https://');
+      return;
+    }
+    fillFromUrl(url);
+  }
+
+  async function fillFromUrl(url: string) {
+    setUrlInput('');
     setScraping(true);
     setError('');
     try {
@@ -295,6 +329,21 @@ export default function ListDetailPage() {
                   </span>
                 </div>
               </div>
+              <form className="url-paste-form" onSubmit={handleUrlSubmit}>
+                <input
+                  type="text"
+                  inputMode="url"
+                  className="url-paste-input"
+                  aria-label="Product link"
+                  placeholder="Or paste a link here"
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  onPaste={handleUrlPaste}
+                />
+                <button type="submit" className="btn btn-outline" disabled={!urlInput.trim()}>
+                  Fetch
+                </button>
+              </form>
               <button className="btn btn-primary" onClick={() => { setPrefill(undefined); setShowItemForm(true); }}>
                 + Add Item Manually
               </button>
