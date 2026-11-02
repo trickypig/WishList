@@ -16,6 +16,7 @@ require_once __DIR__ . '/config/app.php';
 require_once __DIR__ . '/helpers/Response.php';
 require_once __DIR__ . '/helpers/Validator.php';
 require_once __DIR__ . '/helpers/Router.php';
+require_once __DIR__ . '/helpers/Mailer.php';
 
 // Middleware
 require_once __DIR__ . '/middleware/Cors.php';
@@ -23,6 +24,7 @@ require_once __DIR__ . '/middleware/Auth.php';
 
 // Models
 require_once __DIR__ . '/models/User.php';
+require_once __DIR__ . '/models/PasswordReset.php';
 require_once __DIR__ . '/models/WishList.php';
 require_once __DIR__ . '/models/Item.php';
 require_once __DIR__ . '/models/Family.php';

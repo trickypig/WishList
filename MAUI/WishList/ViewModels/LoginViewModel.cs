@@ -53,6 +53,12 @@ public partial class LoginViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task GoToForgotPasswordAsync()
+    {
+        await Shell.Current.GoToAsync("//forgot-password");
+    }
+
+    [RelayCommand]
     private async Task GoToRegisterAsync()
     {
         await Shell.Current.GoToAsync("//register");

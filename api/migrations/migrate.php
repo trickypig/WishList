@@ -8,6 +8,7 @@
 require_once __DIR__ . '/../env.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/app.php';
+require_once __DIR__ . '/../models/PasswordReset.php';
 
 echo "Starting migration...\n";
 
@@ -190,6 +191,10 @@ $db->exec("CREATE TABLE IF NOT EXISTS family_domain_overrides (
 )");
 echo "  [OK] family_domain_overrides\n";
 
+// ---- password_resets ----
+PasswordReset::createTable($db, $autoIncrement, $timestampType);
+echo "  [OK] password_resets\n";
+
 // ---- Indexes ----
 $indexes = [
     'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
@@ -209,6 +214,9 @@ $indexes = [
     'CREATE INDEX IF NOT EXISTS idx_default_allowed_domains_domain ON default_allowed_domains(domain)',
     'CREATE INDEX IF NOT EXISTS idx_family_domain_overrides_family ON family_domain_overrides(family_id)',
     'CREATE INDEX IF NOT EXISTS idx_family_domain_overrides_family_domain ON family_domain_overrides(family_id, domain)',
+    'CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets(email)',
+    'CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token_hash)',
+    'CREATE INDEX IF NOT EXISTS idx_password_resets_ip ON password_resets(client_ip)',
 ];
 
 foreach ($indexes as $idx) {
@@ -220,6 +228,7 @@ echo "  [OK] indexes\n";
 $alterStatements = [
     "ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE users ADD COLUMN is_child INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0",
 ];
 
 foreach ($alterStatements as $sql) {

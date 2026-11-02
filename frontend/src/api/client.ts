@@ -1,6 +1,7 @@
 import type { User, WishList, Item, Family, Purchase, ScrapeLog, AdminStats, AllowedDomain } from '../types';
 
 const BASE_URL = import.meta.env.DEV ? 'http://localhost:8080' : '';
+const PAGES_WITHOUT_LOGIN_REDIRECT = ['/forgot-password', '/reset-password'];
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = {
@@ -23,7 +24,10 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
   // so let it fall through and surface the server's message on the login page.
   if (res.status === 401 && path !== '/auth/login') {
     localStorage.removeItem('token');
-    window.location.href = '/login';
+    // Someone with an old login can still be mid-reset; redirecting would lose their emailed link.
+    if (!PAGES_WITHOUT_LOGIN_REDIRECT.includes(window.location.pathname)) {
+      window.location.href = '/login';
+    }
     throw new Error('Unauthorized');
   }
 
@@ -61,6 +65,20 @@ export function getMe() {
 
 export function changePassword(current_password: string, new_password: string, confirm_password: string) {
   return apiClient.post<{ message: string }>('/auth/change-password', { current_password, new_password, confirm_password });
+}
+
+export function forgotPassword(email: string) {
+  return apiClient.post<{ message: string }>('/auth/forgot-password', { email });
+}
+
+export function resetPassword(data: {
+  token?: string;
+  email?: string;
+  code?: string;
+  new_password: string;
+  confirm_password: string;
+}) {
+  return apiClient.post<{ message: string }>('/auth/reset-password', data);
 }
 
 // Lists

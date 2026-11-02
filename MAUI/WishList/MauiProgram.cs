@@ -27,6 +27,7 @@ public static class MauiProgram
         // ViewModels
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<RegisterViewModel>();
+        builder.Services.AddTransient<ForgotPasswordViewModel>();
         builder.Services.AddTransient<DashboardViewModel>();
         builder.Services.AddTransient<ListDetailViewModel>();
         builder.Services.AddTransient<ItemFormViewModel>();
@@ -38,6 +39,7 @@ public static class MauiProgram
         // Pages
         builder.Services.AddTransient<LoginPage>();
         builder.Services.AddTransient<RegisterPage>();
+        builder.Services.AddTransient<ForgotPasswordPage>();
         builder.Services.AddTransient<DashboardPage>();
         builder.Services.AddTransient<ListDetailPage>();
         builder.Services.AddTransient<ItemFormPage>();

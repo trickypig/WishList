@@ -104,6 +104,24 @@ public class AuthService : IAuthService
         await EnsureSuccessAsync(response);
     }
 
+    public async Task RequestPasswordResetAsync(string email)
+    {
+        var response = await _httpClient.PostAsJsonAsync("/api/auth/forgot-password", new { email });
+        await EnsureSuccessAsync(response);
+    }
+
+    public async Task ResetPasswordAsync(string email, string code, string newPassword, string confirmPassword)
+    {
+        var response = await _httpClient.PostAsJsonAsync("/api/auth/reset-password", new
+        {
+            email,
+            code,
+            new_password = newPassword,
+            confirm_password = confirmPassword
+        });
+        await EnsureSuccessAsync(response);
+    }
+
     private void SetAuthHeader(string token)
     {
         _httpClient.DefaultRequestHeaders.Authorization =

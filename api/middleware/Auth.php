@@ -38,6 +38,7 @@ function generateToken(array $user): string
         'display_name' => $user['display_name'],
         'is_admin'     => (int) ($user['is_admin'] ?? 0),
         'is_child'     => (int) ($user['is_child'] ?? 0),
+        'tv'           => (int) ($user['token_version'] ?? 0),
         'iat'          => time(),
         'exp'          => time() + (30 * 24 * 60 * 60), // 30 days
     ]));
@@ -121,6 +122,15 @@ function authenticate(): array
     // Check expiry
     if (isset($payload['exp']) && $payload['exp'] < time()) {
         Response::unauthorized('Token expired');
+    }
+
+    // A password reset bumps token_version, which logs out every token issued before it.
+    // Tokens from before this check existed have no 'tv' claim and count as version 0.
+    $stmt = getDatabase()->prepare('SELECT token_version FROM users WHERE id = :id');
+    $stmt->execute(['id' => $payload['sub'] ?? 0]);
+    $tokenVersion = $stmt->fetchColumn();
+    if ($tokenVersion === false || (int) $tokenVersion !== (int) ($payload['tv'] ?? 0)) {
+        Response::unauthorized('Session is no longer valid');
     }
 
     return [

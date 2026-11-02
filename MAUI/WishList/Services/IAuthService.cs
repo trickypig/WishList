@@ -12,5 +12,7 @@ public interface IAuthService
     Task<User> GetMeAsync();
     void Logout();
     Task ChangePasswordAsync(string currentPassword, string newPassword, string confirmPassword);
+    Task RequestPasswordResetAsync(string email);
+    Task ResetPasswordAsync(string email, string code, string newPassword, string confirmPassword);
     event Action? AuthStateChanged;
 }

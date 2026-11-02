@@ -6,6 +6,11 @@
 
 function getDatabase(): PDO
 {
+    static $pdo = null;
+    if ($pdo !== null) {
+        return $pdo;
+    }
+
     $driver = env('DB_DRIVER', 'sqlite');
 
     if ($driver === 'sqlite') {

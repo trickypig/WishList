@@ -42,6 +42,11 @@
                     IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"
                     Style="{StaticResource PrimaryButton}" />
 
+            <Button Text="Forgot password?"
+                    Command="{Binding GoToForgotPasswordCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="{StaticResource Primary}" />
+
             <Button Text="Create an account"
                     Command="{Binding GoToRegisterCommand}"
                     BackgroundColor="Transparent"

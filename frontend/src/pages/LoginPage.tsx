@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function LoginPage() {
@@ -9,6 +9,7 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -29,6 +30,7 @@ export default function LoginPage() {
       <div className="auth-card">
         <h1>Welcome Back</h1>
         <p className="auth-subtitle">Sign in to manage your wish lists</p>
+        {location.state?.message && !error && <div className="success-message">{location.state.message}</div>}
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -59,6 +61,9 @@ export default function LoginPage() {
             {submitting ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
+        <p className="auth-footer">
+          <Link to="/forgot-password" state={{ email }}>Forgot password?</Link>
+        </p>
         <p className="auth-footer">
           Don't have an account? <Link to="/register">Create one</Link>
         </p>
