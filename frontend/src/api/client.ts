@@ -19,7 +19,9 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  if (res.status === 401) {
+  // A 401 from the login endpoint means bad credentials, not an expired session,
+  // so let it fall through and surface the server's message on the login page.
+  if (res.status === 401 && path !== '/auth/login') {
     localStorage.removeItem('token');
     window.location.href = '/login';
     throw new Error('Unauthorized');
