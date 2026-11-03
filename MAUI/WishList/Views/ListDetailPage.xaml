@@ -58,7 +58,8 @@
                                     <Label Text="{Binding QuantityDesired, StringFormat='Qty: {0}'}"
                                            FontSize="12" TextColor="Gray" />
                                     <Label Text="{Binding TotalPurchased, StringFormat='({0} purchased)'}"
-                                           FontSize="12" TextColor="Green" />
+                                           FontSize="12" TextColor="Green"
+                                           IsVisible="{Binding HasPurchases}" />
                                 </HorizontalStackLayout>
 
                                 <!-- Actions -->

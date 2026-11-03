@@ -239,6 +239,9 @@ public class ApiService : IApiService
         return result;
     }
 
+    public Task<ScrapeResult> ScrapeHtmlAsync(string url, string html) =>
+        PostAsync<ScrapeResult>("/scrape/html", new { url, html });
+
     private static async Task EnsureSuccessAsync(HttpResponseMessage response)
     {
         if (!response.IsSuccessStatusCode)

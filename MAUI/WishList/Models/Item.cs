@@ -37,4 +37,8 @@ public class Item
 
     [JsonPropertyName("purchased_by_me")]
     public int? PurchasedByMe { get; set; }
+
+    /// <summary>Whether to show the "(X purchased)" label.</summary>
+    [JsonIgnore]
+    public bool HasPurchases => TotalPurchased > 0;
 }

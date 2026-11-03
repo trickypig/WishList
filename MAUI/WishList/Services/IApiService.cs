@@ -39,4 +39,5 @@ public interface IApiService
 
     // Scraping
     Task<ScrapeResult> ScrapeUrlAsync(string url);
+    Task<ScrapeResult> ScrapeHtmlAsync(string url, string html);
 }

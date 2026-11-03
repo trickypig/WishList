@@ -144,6 +144,19 @@ public partial class ItemFormViewModel : ObservableObject
             return;
         }
 
+#if WINDOWS
+        // Stores often block our server, so load the link in the in-app browser to capture it there.
+        if (Uri.TryCreate(ScrapeUrl.Trim(), UriKind.Absolute, out var pastedUri)
+            && (pastedUri.Scheme == Uri.UriSchemeHttp || pastedUri.Scheme == Uri.UriSchemeHttps))
+        {
+            ErrorMessage = string.Empty;
+            var startUrl = Uri.EscapeDataString(pastedUri.AbsoluteUri);
+            ScrapeUrl = string.Empty;
+            await Shell.Current.GoToAsync($"browser?listId={ListId}&startUrl={startUrl}");
+            return;
+        }
+#endif
+
         IsScraping = true;
         ErrorMessage = string.Empty;
 

@@ -266,6 +266,7 @@ dotnet publish -f net10.0-android -c Release
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | POST | `/api/scrape/url` | Yes | Extract product info from URL |
+| POST | `/api/scrape/html` | Yes | Extract product info from a page the client already loaded (`url`, `html`) |
 
 ### Admin
 

@@ -1,4 +1,5 @@
 #if WINDOWS
+using System.Text.Json;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.Web.WebView2.Core;
 using WishList.ViewModels;
@@ -7,6 +8,19 @@ namespace WishList.Views;
 
 public partial class BrowserPage : ContentPage
 {
+    // Removes what extraction doesn't use, keeping the upload small and leaving
+    // form values and tokens out of what gets sent to the server and logged.
+    private const string ReadPageScript = """
+        (function () {
+            var root = document.documentElement.cloneNode(true);
+            root.querySelectorAll('script:not([type="application/ld+json"]),style,svg,noscript,iframe,template,link,input')
+                .forEach(function (el) { el.remove(); });
+            return { url: location.href, html: root.outerHTML.substring(0, 2000000) };
+        })()
+        """;
+
+    private static readonly JsonSerializerOptions ReadPageJsonOptions = new() { PropertyNameCaseInsensitive = true };
+
     private readonly BrowserViewModel _viewModel;
     private bool _newWindowHandlerAttached;
 
@@ -14,6 +28,7 @@ public partial class BrowserPage : ContentPage
     {
         InitializeComponent();
         BindingContext = _viewModel = viewModel;
+        _viewModel.ReadCurrentPage = ReadCurrentPageAsync;
         BrowserWebView.HandlerChanged += OnWebViewHandlerChanged;
     }
 
@@ -21,6 +36,16 @@ public partial class BrowserPage : ContentPage
     {
         base.OnAppearing();
         await _viewModel.LoadDomainsAsync();
+        await _viewModel.OpenStartUrlAsync();
+    }
+
+    private async Task<BrowserPageContent?> ReadCurrentPageAsync()
+    {
+        if (BrowserWebView.Handler?.PlatformView is not WebView2 { CoreWebView2: not null } nativeWebView)
+            return null;
+
+        var json = await nativeWebView.CoreWebView2.ExecuteScriptAsync(ReadPageScript);
+        return JsonSerializer.Deserialize<BrowserPageContent>(json, ReadPageJsonOptions);
     }
 
     private void OnWebViewHandlerChanged(object? sender, EventArgs e)

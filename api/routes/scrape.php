@@ -47,36 +47,13 @@ function registerScrapeRoutes(Router $router, PDO $db): void
         // Limit to first 500KB for parsing
         $html = substr($html, 0, 500000);
 
-        $result = [
-            'url' => $url,
-            'name' => '',
-            'price' => null,
-            'image_url' => '',
-            'store_name' => extractStoreName($url),
-        ];
-
-        // Use site-specific extractors first, then generic fallbacks
-        if ($isAmazon) {
-            $result = array_merge($result, extractAmazon($html, $url));
-        } elseif (preg_match('/ebay\.(com|co\.uk|de|fr|it|es|com\.au)$/i', $host)) {
-            $result = array_merge($result, extractEbay($html, $url));
+        $blocked = detectBlockedPage($html, $httpCode);
+        if ($blocked !== null) {
+            logScrape($db, $user['id'], $url, $host, $httpCode, $html, $rawLength, null, null, null, null, false, $blocked, $startTime);
+            Response::error('This store blocked the request', 422);
         }
 
-        // Fill in any blanks with generic extraction
-        if (empty($result['name'])) {
-            $result['name'] = extractProductName($html);
-        }
-        if ($result['price'] === null) {
-            $result['price'] = extractPrice($html);
-        }
-        if (empty($result['image_url'])) {
-            $result['image_url'] = extractImage($html, $url);
-        }
-
-        // Final cleanup: strip store name prefix/suffix from product name
-        if (!empty($result['name'])) {
-            $result['name'] = stripStoreName($result['name']);
-        }
+        $result = extractProductInfo($html, $url);
 
         // Log successful scrape
         logScrape(
@@ -87,6 +64,106 @@ function registerScrapeRoutes(Router $router, PDO $db): void
 
         Response::json($result);
     });
+
+    // POST /scrape/html - extract product name, price, image from a page the client already loaded
+    $router->post('/scrape/html', function (array $params) use ($db) {
+        // Suppress PHP warnings/notices so they don't corrupt JSON output
+        error_reporting(0);
+        ini_set('display_errors', '0');
+
+        $user = authenticate();
+        $body = $params['_body'];
+        $startTime = microtime(true);
+
+        $url = is_string($body['url'] ?? null) ? $body['url'] : '';
+        $html = is_string($body['html'] ?? null) ? $body['html'] : '';
+        $scheme = parse_url($url, PHP_URL_SCHEME);
+
+        if (!filter_var($url, FILTER_VALIDATE_URL) || !in_array($scheme, ['http', 'https'])) {
+            Response::error('A valid HTTP/HTTPS URL is required');
+        }
+        if ($html === '') {
+            Response::error('Page content is required');
+        }
+
+        $host = strtolower(parse_url($url, PHP_URL_HOST) ?? '');
+        $rawLength = strlen($html);
+        $html = substr($html, 0, 2000000);
+
+        $blocked = detectBlockedPage($html, null);
+        if ($blocked !== null) {
+            logScrape($db, $user['id'], $url, $host, null, $html, $rawLength, null, null, null, null, false, $blocked, $startTime);
+            Response::error('This looks like a block or error page, not a product. If the store is asking you to verify something, do that and capture again.', 422);
+        }
+
+        $result = extractProductInfo($html, $url);
+
+        logScrape(
+            $db, $user['id'], $url, $host, null, $html, $rawLength,
+            $result['name'], $result['price'], $result['image_url'], $result['store_name'],
+            true, null, $startTime
+        );
+
+        Response::json($result);
+    });
+}
+
+/**
+ * Returns why a response is a block/error page rather than a product page, or null if it looks fine.
+ * Only the status and <title> are checked: body text can mention these phrases on real pages.
+ */
+function detectBlockedPage(string $html, ?int $httpCode): ?string
+{
+    if ($httpCode !== null && ($httpCode < 200 || $httpCode >= 300)) {
+        return 'Blocked: HTTP ' . $httpCode;
+    }
+
+    if (preg_match('/<title[^>]*>(.*?)<\/title>/si', $html, $m)) {
+        $title = cleanText($m[1]);
+        if (preg_match('/^(?:error page|access denied|just a moment|attention required|robot check|pardon our interruption|are you a (?:human|robot)|security check|(?:403 )?forbidden)(?:\W|$)/i', $title)) {
+            return 'Blocked: page title "' . $title . '"';
+        }
+    }
+
+    return null;
+}
+
+function extractProductInfo(string $html, string $url): array
+{
+    $host = strtolower(parse_url($url, PHP_URL_HOST) ?? '');
+
+    $result = [
+        'url' => $url,
+        'name' => '',
+        'price' => null,
+        'image_url' => '',
+        'store_name' => extractStoreName($url),
+    ];
+
+    // Use site-specific extractors first, then generic fallbacks
+    if (preg_match('/amazon\.(com|co\.uk|ca|de|fr|it|es|co\.jp|com\.au|in)$/i', $host)) {
+        $result = array_merge($result, extractAmazon($html, $url));
+    } elseif (preg_match('/ebay\.(com|co\.uk|de|fr|it|es|com\.au)$/i', $host)) {
+        $result = array_merge($result, extractEbay($html, $url));
+    }
+
+    // Fill in any blanks with generic extraction
+    if (empty($result['name'])) {
+        $result['name'] = extractProductName($html);
+    }
+    if ($result['price'] === null) {
+        $result['price'] = extractPrice($html);
+    }
+    if (empty($result['image_url'])) {
+        $result['image_url'] = extractImage($html, $url);
+    }
+
+    // Final cleanup: strip store name prefix/suffix from product name
+    if (!empty($result['name'])) {
+        $result['name'] = stripStoreName($result['name']);
+    }
+
+    return $result;
 }
 
 function logScrape(
@@ -133,7 +210,7 @@ function stripStoreName(string $name): string
     $name = preg_replace('/^(?:eBay|Walmart|Target|Best Buy|Etsy|Newegg)\s*[:|\-]\s*/i', '', $name);
 
     // Strip " - Amazon.com" or " | eBay" etc. suffix
-    $name = preg_replace('/\s*[\-\|:]\s*(?:Amazon\.[a-z.]+|eBay|Walmart|Target|Best Buy|Etsy|Newegg).*$/i', '', $name);
+    $name = preg_replace('/\s*[\-\|:]\s*(?:Amazon\.[a-z.]+|eBay|Walmart|Target|Best Buy|Etsy|Newegg|(?:The )?Home Depot).*$/i', '', $name);
 
     return trim($name);
 }
@@ -518,13 +595,18 @@ function extractPrice(string $html): ?float
     }
 
     // 5. Elements with price-related classes containing currency
-    if (preg_match('/class=["\'][^"\']*(?:product-price|sale-price|current-price|final-price|offer-price)[^"\']*["\'][^>]*>[^<]*?[\$£€]\s*([0-9]+[.,]?[0-9]*)/i', $html, $m)) {
+    if (preg_match('/class=["\'][^"\']*(?:product-price|sale-price|current-price|final-price|offer-price)[^"\']*["\'][^>]*>[^<]*?[\$£€]\s*([0-9][0-9.,]*)/i', $html, $m)) {
         return parsePrice($m[1]);
     }
 
-    // 6. Any element with "price" in class/id containing a dollar amount
-    if (preg_match('/(?:class|id)=["\'][^"\']*price[^"\']*["\'][^>]*>[^<]*?[\$£€]\s*([0-9]+[.,]?[0-9]*)/i', $html, $m)) {
-        return parsePrice($m[1]);
+    // 6. Any element with "price" in class/id containing a dollar amount,
+    //    skipping amounts that aren't what the item costs now
+    if (preg_match_all('/(?:class|id)=["\']([^"\']*price[^"\']*)["\'][^>]*>[^<]*?[\$£€]\s*([0-9][0-9.,]*)/i', $html, $matches, PREG_SET_ORDER)) {
+        foreach ($matches as $m) {
+            if (!preg_match('/(?:list|was|old|original|regular|compare)[-_]?price|strike|msrp|saving|shipping/i', $m[1])) {
+                return parsePrice($m[2]);
+            }
+        }
     }
 
     return null;
@@ -598,7 +680,44 @@ function extractImage(string $html, string $baseUrl): string
         return resolveUrl($m[1], $baseUrl);
     }
 
+    // 4. Schema.org JSON-LD product image
+    if (preg_match_all('/<script[^>]*type=["\']application\/ld\+json["\'][^>]*>(.*?)<\/script>/si', $html, $scripts)) {
+        foreach ($scripts[1] as $jsonText) {
+            $image = findImageInJsonLd(json_decode($jsonText, true));
+            if ($image !== null) {
+                return resolveUrl($image, $baseUrl);
+            }
+        }
+    }
+
     return '';
+}
+
+function findImageInJsonLd($data): ?string
+{
+    if (!is_array($data)) return null;
+
+    if (($data['@type'] ?? '') === 'Product' && isset($data['image'])) {
+        $image = $data['image'];
+        if (is_array($image) && isset($image[0])) {
+            $image = $image[0];
+        }
+        if (is_array($image)) {
+            $image = $image['url'] ?? $image['contentUrl'] ?? null;
+        }
+        if (is_string($image) && $image !== '') {
+            return $image;
+        }
+    }
+
+    // Some pages nest nodes in @graph or wrap them in a top-level array
+    $nodes = $data['@graph'] ?? (isset($data[0]) ? $data : []);
+    foreach (is_array($nodes) ? $nodes : [] as $node) {
+        $image = findImageInJsonLd($node);
+        if ($image !== null) return $image;
+    }
+
+    return null;
 }
 
 function resolveUrl(string $url, string $baseUrl): string
