@@ -297,8 +297,9 @@ function fetchUrl(string $url, bool $isAmazon = false): array
     $html = file_get_contents($url, false, $context);
 
     // Try to extract HTTP code from response headers
-    if (isset($http_response_header) && is_array($http_response_header)) {
-        foreach ($http_response_header as $hdr) {
+    $responseHeaders = http_get_last_response_headers();
+    if (is_array($responseHeaders)) {
+        foreach ($responseHeaders as $hdr) {
             if (preg_match('/^HTTP\/\S+\s+(\d+)/', $hdr, $hm)) {
                 $result['http_code'] = (int) $hm[1];
             }

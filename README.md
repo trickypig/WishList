@@ -8,7 +8,7 @@ A family wish list app where users create and share gift lists with family membe
 
 ## Prerequisites
 
-- **PHP 8.1+** with `pdo_sqlite` extension
+- **PHP 8.4+** with `pdo_sqlite` extension
 - **Node.js 18+** and npm
 - **.NET 10 SDK** (for MAUI app)
 
