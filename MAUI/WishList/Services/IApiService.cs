@@ -18,6 +18,12 @@ public interface IApiService
     Task<Item> UpdateItemAsync(int id, Item item);
     Task DeleteItemAsync(int id);
     Task ReorderItemsAsync(int listId, List<int> itemIds);
+    Task ArrangeItemsAsync(int listId, IEnumerable<(int ItemId, int? GroupId)> arrangement);
+
+    // Item groups
+    Task<ItemGroup> CreateGroupAsync(int listId, string title, string description);
+    Task<ItemGroup> UpdateGroupAsync(int groupId, string title, string description);
+    Task DeleteGroupAsync(int groupId);
 
     // Purchases
     Task<Purchase> PurchaseItemAsync(int itemId, int quantity);

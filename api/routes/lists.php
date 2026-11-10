@@ -69,6 +69,7 @@ function registerListRoutes(Router $router, PDO $db): void
         }
 
         $list['items'] = $items;
+        $list['groups'] = ItemGroup::getByListId($db, $listId);
         $list['is_owner'] = $isOwner;
 
         Response::json(['list' => $list]);

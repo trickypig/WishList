@@ -11,6 +11,7 @@ interface ItemCardProps {
   onUnpurchase?: (item: Item) => void;
   isFirst?: boolean;
   isLast?: boolean;
+  compact?: boolean;
 }
 
 export default function ItemCard({
@@ -24,13 +25,14 @@ export default function ItemCard({
   onUnpurchase,
   isFirst,
   isLast,
+  compact,
 }: ItemCardProps) {
   const totalPurchased = item.total_purchased || 0;
   const purchasedByMe = item.purchased_by_me || 0;
   const fullyPurchased = totalPurchased >= item.quantity_desired;
 
   return (
-    <div className={`item-card ${fullyPurchased && !isOwner ? 'item-card-purchased' : ''}`}>
+    <div className={`item-card ${compact ? 'item-card-compact' : ''} ${fullyPurchased && !isOwner ? 'item-card-purchased' : ''}`}>
       <div className="item-card-main">
         {item.image_url && (
           <div className="item-image">

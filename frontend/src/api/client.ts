@@ -1,4 +1,4 @@
-import type { User, WishList, Item, Family, Purchase, ScrapeLog, AdminStats, AllowedDomain } from '../types';
+import type { User, WishList, Item, ItemGroup, Family, Purchase, ScrapeLog, AdminStats, AllowedDomain } from '../types';
 
 const BASE_URL = import.meta.env.DEV ? 'http://localhost:8080' : '';
 const PAGES_WITHOUT_LOGIN_REDIRECT = ['/forgot-password', '/reset-password'];
@@ -141,6 +141,23 @@ export function deleteItem(id: number) {
 
 export function reorderItems(listId: number, item_ids: number[]) {
   return apiClient.put<void>(`/lists/${listId}/items/reorder`, { item_ids });
+}
+
+export function arrangeItems(listId: number, items: { id: number; group_id: number | null }[]) {
+  return apiClient.put<void>(`/lists/${listId}/items/arrange`, { items });
+}
+
+// Item groups
+export function createGroup(listId: number, data: { title: string; description: string }) {
+  return apiClient.post<{ group: ItemGroup }>(`/lists/${listId}/groups`, data);
+}
+
+export function updateGroup(id: number, data: { title: string; description: string }) {
+  return apiClient.put<{ group: ItemGroup }>(`/groups/${id}`, data);
+}
+
+export function deleteGroup(id: number) {
+  return apiClient.delete<void>(`/groups/${id}`);
 }
 
 // Purchases

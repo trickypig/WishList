@@ -9,6 +9,7 @@ require_once __DIR__ . '/../env.php';
 require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/app.php';
 require_once __DIR__ . '/../models/PasswordReset.php';
+require_once __DIR__ . '/../models/ItemGroup.php';
 
 echo "Starting migration...\n";
 
@@ -195,6 +196,10 @@ echo "  [OK] family_domain_overrides\n";
 PasswordReset::createTable($db, $autoIncrement, $timestampType);
 echo "  [OK] password_resets\n";
 
+// ---- item_groups ----
+ItemGroup::createTable($db, $autoIncrement, $timestampType);
+echo "  [OK] item_groups\n";
+
 // ---- Indexes ----
 $indexes = [
     'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
@@ -217,6 +222,7 @@ $indexes = [
     'CREATE INDEX IF NOT EXISTS idx_password_resets_email ON password_resets(email)',
     'CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token_hash)',
     'CREATE INDEX IF NOT EXISTS idx_password_resets_ip ON password_resets(client_ip)',
+    'CREATE INDEX IF NOT EXISTS idx_item_groups_list ON item_groups(list_id)',
 ];
 
 foreach ($indexes as $idx) {
@@ -236,6 +242,7 @@ $alterStatements = [
     "ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE users ADD COLUMN is_child INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE items ADD COLUMN group_id INTEGER NULL",
 ];
 
 foreach ($alterStatements as $sql) {

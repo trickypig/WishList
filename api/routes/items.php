@@ -31,7 +31,8 @@ function registerItemRoutes(Router $router, PDO $db): void
             (int) ($body['quantity_desired'] ?? 1),
             $body['image_url'] ?? '',
             (int) ($body['sort_order'] ?? 0),
-            $body['links'] ?? []
+            $body['links'] ?? [],
+            resolveGroupId($db, $listId, $body['group_id'] ?? null)
         );
 
         $item = Item::getById($db, $itemId);
@@ -67,7 +68,7 @@ function registerItemRoutes(Router $router, PDO $db): void
             isset($body['price']) ? (float) $body['price'] : null,
             (int) ($body['quantity_desired'] ?? 1),
             $body['image_url'] ?? '',
-            (int) ($body['sort_order'] ?? 0),
+            (int) ($body['sort_order'] ?? $item['sort_order']),
             $body['links'] ?? []
         );
 

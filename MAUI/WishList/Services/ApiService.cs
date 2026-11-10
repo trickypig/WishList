@@ -162,6 +162,30 @@ public class ApiService : IApiService
         await PutAsync($"/lists/{listId}/items/reorder", new { item_ids = itemIds });
     }
 
+    public async Task ArrangeItemsAsync(int listId, IEnumerable<(int ItemId, int? GroupId)> arrangement)
+    {
+        var items = arrangement.Select(a => new { id = a.ItemId, group_id = a.GroupId }).ToList();
+        await PutAsync($"/lists/{listId}/items/arrange", new { items });
+    }
+
+    // Item groups
+    public async Task<ItemGroup> CreateGroupAsync(int listId, string title, string description)
+    {
+        var result = await PostAsync<JsonElement>($"/lists/{listId}/groups", new { title, description });
+        return result.GetProperty("group").Deserialize<ItemGroup>()!;
+    }
+
+    public async Task<ItemGroup> UpdateGroupAsync(int groupId, string title, string description)
+    {
+        var result = await PutAsync<JsonElement>($"/groups/{groupId}", new { title, description });
+        return result.GetProperty("group").Deserialize<ItemGroup>()!;
+    }
+
+    public async Task DeleteGroupAsync(int groupId)
+    {
+        await DeleteAsync($"/groups/{groupId}");
+    }
+
     // Purchases
     public async Task<Purchase> PurchaseItemAsync(int itemId, int quantity)
     {

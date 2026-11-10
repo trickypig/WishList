@@ -29,6 +29,15 @@ public class Item
     [JsonPropertyName("sort_order")]
     public int SortOrder { get; set; }
 
+    /// <summary>The group this item sits in, or null when it is in the ungrouped section.</summary>
+    [JsonPropertyName("group_id")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public int? GroupId { get; set; }
+
+    /// <summary>Items inside a group are drawn a little smaller.</summary>
+    [JsonIgnore]
+    public bool IsInGroup => GroupId != null;
+
     [JsonPropertyName("links")]
     public List<ItemLink> Links { get; set; } = [];
 

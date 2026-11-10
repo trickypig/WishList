@@ -59,6 +59,7 @@ class WishList
         $db->prepare('DELETE FROM item_links WHERE item_id IN (SELECT id FROM items WHERE list_id = :list_id)')->execute(['list_id' => $id]);
         $db->prepare('DELETE FROM purchases WHERE item_id IN (SELECT id FROM items WHERE list_id = :list_id)')->execute(['list_id' => $id]);
         $db->prepare('DELETE FROM items WHERE list_id = :list_id')->execute(['list_id' => $id]);
+        ItemGroup::deleteByListId($db, $id);
         $db->prepare('DELETE FROM list_family_shares WHERE list_id = :list_id')->execute(['list_id' => $id]);
         $db->prepare('DELETE FROM wish_lists WHERE id = :id')->execute(['id' => $id]);
     }

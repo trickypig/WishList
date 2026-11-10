@@ -28,6 +28,9 @@ public class WishListModel
     [JsonPropertyName("items")]
     public List<Item>? Items { get; set; }
 
+    [JsonPropertyName("groups")]
+    public List<ItemGroup>? Groups { get; set; }
+
     [JsonPropertyName("family_ids")]
     public List<int>? FamilyIds { get; set; }
 

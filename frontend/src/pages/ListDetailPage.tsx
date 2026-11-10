@@ -3,11 +3,23 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
   getList, updateList, deleteList, createItem, updateItem,
-  deleteItem, reorderItems, purchaseItem, unpurchaseItem, scrapeUrl,
+  deleteItem, arrangeItems, purchaseItem, unpurchaseItem, scrapeUrl,
+  createGroup, updateGroup, deleteGroup,
 } from '../api/client';
-import type { WishList, Item } from '../types';
+import type { WishList, Item, ItemGroup } from '../types';
 import ItemCard from '../components/items/ItemCard';
 import ItemForm from '../components/items/ItemForm';
+import GroupForm from '../components/items/GroupForm';
+
+// Custom drag type so moving an item never gets mistaken for a dropped product link
+const ITEM_DRAG_TYPE = 'application/x-wish-item';
+
+/** null is the ungrouped section at the top of the list */
+type GroupKey = number | null;
+
+function isItemDrag(e: DragEvent): boolean {
+  return e.dataTransfer.types.includes(ITEM_DRAG_TYPE);
+}
 import SharingModal from '../components/lists/SharingModal';
 
 function isWebUrl(text: string): boolean {
@@ -35,6 +47,10 @@ export default function ListDetailPage() {
   const [dragOver, setDragOver] = useState(false);
   const [scraping, setScraping] = useState(false);
   const [urlInput, setUrlInput] = useState('');
+  const [showGroupForm, setShowGroupForm] = useState(false);
+  const [editingGroupId, setEditingGroupId] = useState<number | null>(null);
+  const [draggingId, setDraggingId] = useState<number | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ group: GroupKey; beforeId: number | null } | null>(null);
   const [prefill, setPrefill] = useState<{
     name?: string;
     price?: number | null;
@@ -98,6 +114,7 @@ export default function ListDetailPage() {
   }
 
   function handleDragOver(e: DragEvent) {
+    if (isItemDrag(e)) return;
     e.preventDefault();
     e.stopPropagation();
     setDragOver(true);
@@ -110,6 +127,7 @@ export default function ListDetailPage() {
   }
 
   async function handleDrop(e: DragEvent) {
+    if (isItemDrag(e)) return;
     e.preventDefault();
     e.stopPropagation();
     setDragOver(false);
@@ -204,21 +222,173 @@ export default function ListDetailPage() {
     }
   }
 
-  async function handleMoveItem(item: Item, direction: 'up' | 'down') {
-    if (!list?.items) return;
-    const items = [...list.items];
-    const index = items.findIndex((i) => i.id === item.id);
-    if (direction === 'up' && index > 0) {
-      [items[index - 1], items[index]] = [items[index], items[index - 1]];
-    } else if (direction === 'down' && index < items.length - 1) {
-      [items[index], items[index + 1]] = [items[index + 1], items[index]];
-    }
+  const groups: ItemGroup[] = list?.groups || [];
+  const groupIds = new Set(groups.map((g) => Number(g.id)));
+  const sectionKeys: GroupKey[] = [null, ...groups.map((g) => Number(g.id))];
+
+  function groupOf(item: Item): GroupKey {
+    const gid = item.group_id == null ? null : Number(item.group_id);
+    return gid != null && groupIds.has(gid) ? gid : null;
+  }
+
+  function itemsIn(group: GroupKey): Item[] {
+    return (list?.items || []).filter((i) => groupOf(i) === group);
+  }
+
+  /** Moves an item into a section, ahead of beforeId (or to the end), and saves the whole order. */
+  async function moveItem(itemId: number, toGroup: GroupKey, beforeId: number | null) {
+    if (!list?.items || beforeId === itemId) return;
+    const current = list.items;
+    const moving = current.find((i) => i.id === itemId);
+    if (!moving) return;
+
+    const sections = new Map(sectionKeys.map((k) => [k, itemsIn(k).filter((i) => i.id !== itemId)]));
+    const target = sections.get(toGroup);
+    if (!target) return;
+    const at = beforeId == null ? -1 : target.findIndex((i) => i.id === beforeId);
+    target.splice(at < 0 ? target.length : at, 0, moving);
+
+    const ordered = sectionKeys.flatMap((k) =>
+      (sections.get(k) || []).map((i) => ({ ...i, group_id: k })),
+    );
+    const unchanged = ordered.every((i, n) => current[n]?.id === i.id && groupOf(current[n]) === i.group_id);
+    if (unchanged) return;
+
+    // Show the new arrangement straight away; the reload afterwards confirms what the server saved
+    setList({ ...list, items: ordered.map((i, n) => ({ ...i, sort_order: n })) });
     try {
-      await reorderItems(list.id, items.map((i) => i.id));
+      await arrangeItems(list.id, ordered.map((i) => ({ id: i.id, group_id: i.group_id })));
+    } catch {
+      setError('Failed to move item');
+    }
+    loadList();
+  }
+
+  function handleMoveItem(item: Item, direction: 'up' | 'down') {
+    const group = groupOf(item);
+    const section = itemsIn(group);
+    const index = section.findIndex((i) => i.id === item.id);
+    if (direction === 'up' && index > 0) {
+      moveItem(item.id, group, section[index - 1].id);
+    } else if (direction === 'down' && index < section.length - 1) {
+      moveItem(item.id, group, section[index + 2]?.id ?? null);
+    }
+  }
+
+  function handleItemDragOver(e: DragEvent<HTMLDivElement>, group: GroupKey, section: Item[], index: number) {
+    if (!isItemDrag(e)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    e.dataTransfer.dropEffect = 'move';
+    // Lower half of a card means "drop after it"
+    const rect = e.currentTarget.getBoundingClientRect();
+    const after = e.clientY > rect.top + rect.height / 2;
+    const beforeId = after ? (section[index + 1]?.id ?? null) : section[index].id;
+    if (dropTarget?.group !== group || dropTarget.beforeId !== beforeId) {
+      setDropTarget({ group, beforeId });
+    }
+  }
+
+  function handleSectionDragOver(e: DragEvent<HTMLElement>, group: GroupKey) {
+    if (!isItemDrag(e)) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    // Over a header or the gap between cards: keep the spot already chosen in this section
+    if (dropTarget?.group !== group) {
+      setDropTarget({ group, beforeId: null });
+    }
+  }
+
+  function handleSectionDragLeave(e: DragEvent<HTMLElement>) {
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+      setDropTarget(null);
+    }
+  }
+
+  function handleSectionDrop(e: DragEvent<HTMLElement>, group: GroupKey) {
+    if (!isItemDrag(e)) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const itemId = Number(e.dataTransfer.getData(ITEM_DRAG_TYPE));
+    const beforeId = dropTarget?.group === group ? dropTarget.beforeId : null;
+    setDropTarget(null);
+    setDraggingId(null);
+    if (itemId) moveItem(itemId, group, beforeId);
+  }
+
+  async function handleAddGroup(data: { title: string; description: string }) {
+    if (!list) return;
+    try {
+      await createGroup(list.id, data);
+      setShowGroupForm(false);
       loadList();
     } catch {
-      setError('Failed to reorder items');
+      setError('Failed to add group');
     }
+  }
+
+  async function handleUpdateGroup(group: ItemGroup, data: { title: string; description: string }) {
+    try {
+      await updateGroup(group.id, data);
+      setEditingGroupId(null);
+      loadList();
+    } catch {
+      setError('Failed to update group');
+    }
+  }
+
+  async function handleDeleteGroup(group: ItemGroup) {
+    if (!confirm(`Delete the group "${group.title}"? Its items will stay on the list, just outside any group.`)) return;
+    try {
+      await deleteGroup(group.id);
+      loadList();
+    } catch {
+      setError('Failed to delete group');
+    }
+  }
+
+  function renderItems(group: GroupKey, compact: boolean) {
+    const section = itemsIn(group);
+    const dropHere = dropTarget?.group === group;
+    return (
+      <div className={`items-list ${compact ? 'items-list-compact' : ''} ${dropHere && dropTarget?.beforeId == null ? 'items-list-drop-end' : ''}`}>
+        {section.map((item, index) => (
+          <div
+            key={item.id}
+            className={`item-drag-wrap ${draggingId === item.id ? 'item-dragging' : ''} ${dropHere && dropTarget?.beforeId === item.id ? 'item-drop-before' : ''}`}
+            draggable={isOwner}
+            onDragStart={(e) => {
+              e.dataTransfer.setData(ITEM_DRAG_TYPE, String(item.id));
+              e.dataTransfer.effectAllowed = 'move';
+              setDraggingId(item.id);
+            }}
+            onDragEnd={() => { setDraggingId(null); setDropTarget(null); }}
+            onDragOver={(e) => handleItemDragOver(e, group, section, index)}
+            onDrop={(e) => handleSectionDrop(e, group)}
+          >
+            <ItemCard
+              item={item}
+              isOwner={isOwner}
+              compact={compact}
+              onEdit={setEditingItem}
+              onDelete={handleDeleteItem}
+              onMoveUp={(i) => handleMoveItem(i, 'up')}
+              onMoveDown={(i) => handleMoveItem(i, 'down')}
+              onPurchase={handlePurchase}
+              onUnpurchase={handleUnpurchase}
+              isFirst={index === 0}
+              isLast={index === section.length - 1}
+            />
+          </div>
+        ))}
+        {section.length === 0 && isOwner && group != null && (
+          <p className="item-group-empty">Drag items here</p>
+        )}
+        {section.length === 0 && isOwner && group == null && draggingId != null && (
+          <p className="item-group-empty">Drop here to take an item out of its group</p>
+        )}
+      </div>
+    );
   }
 
   async function handlePurchase(item: Item) {
@@ -368,29 +538,75 @@ export default function ListDetailPage() {
         </div>
       )}
 
-      <div className="items-list">
-        {items.length === 0 ? (
+      {isOwner && (
+        <div className="group-toolbar">
+          {showGroupForm ? (
+            <GroupForm onSubmit={handleAddGroup} onCancel={() => setShowGroupForm(false)} />
+          ) : (
+            <button className="btn btn-outline btn-sm" onClick={() => setShowGroupForm(true)}>
+              + Add Group
+            </button>
+          )}
+          {groups.length > 0 && !showGroupForm && (
+            <span className="group-toolbar-hint">Drag items onto a group to move them.</span>
+          )}
+        </div>
+      )}
+
+      {items.length === 0 && groups.length === 0 ? (
+        <div className="items-list">
           <div className="empty-state">
             <p>{isOwner ? 'No items yet. Add your first wish!' : 'This list has no items yet.'}</p>
           </div>
-        ) : (
-          items.map((item, index) => (
-            <ItemCard
-              key={item.id}
-              item={item}
-              isOwner={isOwner}
-              onEdit={setEditingItem}
-              onDelete={handleDeleteItem}
-              onMoveUp={(i) => handleMoveItem(i, 'up')}
-              onMoveDown={(i) => handleMoveItem(i, 'down')}
-              onPurchase={handlePurchase}
-              onUnpurchase={handleUnpurchase}
-              isFirst={index === 0}
-              isLast={index === items.length - 1}
-            />
-          ))
-        )}
-      </div>
+        </div>
+      ) : (
+        <div className="list-sections">
+          <section
+            className={`ungrouped-section ${dropTarget?.group === null ? 'section-drop' : ''}`}
+            onDragOver={(e) => handleSectionDragOver(e, null)}
+            onDragLeave={handleSectionDragLeave}
+            onDrop={(e) => handleSectionDrop(e, null)}
+          >
+            {renderItems(null, false)}
+          </section>
+
+          {groups.map((group) => {
+            const key = Number(group.id);
+            if (!isOwner && itemsIn(key).length === 0) return null;
+            return (
+              <section
+                key={group.id}
+                className={`item-group ${dropTarget?.group === key ? 'section-drop' : ''}`}
+                onDragOver={(e) => handleSectionDragOver(e, key)}
+                onDragLeave={handleSectionDragLeave}
+                onDrop={(e) => handleSectionDrop(e, key)}
+              >
+                {editingGroupId === key ? (
+                  <GroupForm
+                    initial={group}
+                    onSubmit={(data) => handleUpdateGroup(group, data)}
+                    onCancel={() => setEditingGroupId(null)}
+                  />
+                ) : (
+                  <div className="item-group-header">
+                    <div className="item-group-heading">
+                      <h3 className="item-group-title">{group.title}</h3>
+                      {group.description && <p className="item-group-desc">{group.description}</p>}
+                    </div>
+                    {isOwner && (
+                      <div className="item-group-actions">
+                        <button className="btn btn-sm btn-ghost" onClick={() => setEditingGroupId(key)}>Edit</button>
+                        <button className="btn btn-sm btn-ghost" onClick={() => handleDeleteGroup(group)}>Delete</button>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {renderItems(key, true)}
+              </section>
+            );
+          })}
+        </div>
+      )}
 
       {showSharing && (
         <SharingModal

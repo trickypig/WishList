@@ -45,7 +45,16 @@ export interface WishList {
   owner_name?: string;
   created_at: string;
   items?: Item[];
+  groups?: ItemGroup[];
   family_ids?: number[];
+}
+
+export interface ItemGroup {
+  id: number;
+  list_id: number;
+  title: string;
+  description: string | null;
+  sort_order: number;
 }
 
 export interface ItemLink {
@@ -64,6 +73,7 @@ export interface Item {
   quantity_desired: number;
   image_url: string;
   sort_order: number;
+  group_id: number | null;
   links: ItemLink[];
   total_purchased?: number;
   purchased_by_me?: number;
