@@ -28,11 +28,22 @@
             <Label Text="{Binding VisibilityLabel}" TextColor="Gray" FontSize="12" />
         </VerticalStackLayout>
 
+        <!-- Someone else's list: fully purchased items are hidden unless asked for -->
+        <HorizontalStackLayout Grid.Row="0" Padding="12,8" Spacing="2"
+                               IsVisible="{Binding IsOwner, Converter={StaticResource InvertedBoolConverter}}">
+            <CheckBox IsChecked="{Binding ShowPurchased}" VerticalOptions="Center" />
+            <Label Text="Show Purchased" VerticalOptions="Center">
+                <Label.GestureRecognizers>
+                    <TapGestureRecognizer Command="{Binding ToggleShowPurchasedCommand}" />
+                </Label.GestureRecognizers>
+            </Label>
+        </HorizontalStackLayout>
+
         <RefreshView Grid.Row="1"
                      IsRefreshing="{Binding IsRefreshing}"
                      Command="{Binding LoadListCommand}">
             <CollectionView ItemsSource="{Binding Items}"
-                            EmptyView="No items in this list yet.">
+                            EmptyView="{Binding EmptyMessage}">
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:Item">
                         <Frame Style="{StaticResource CardFrame}" Margin="16,4">
@@ -91,12 +102,15 @@
                                                 HeightRequest="28" Padding="6,0" FontSize="10" />
                                     </HorizontalStackLayout>
 
-                                    <!-- Non-owner purchase actions -->
-                                    <Button Text="Buy"
-                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=PurchaseItemCommand}"
-                                            CommandParameter="{Binding}"
-                                            Style="{StaticResource PrimaryButton}"
-                                            HeightRequest="30" Padding="8,0" FontSize="11" />
+                                    <!-- Non-owner purchase actions, only while some are still wanted -->
+                                    <ContentView IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=IsOwner, Converter={StaticResource InvertedBoolConverter}}">
+                                        <Button Text="Buy"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=PurchaseItemCommand}"
+                                                CommandParameter="{Binding}"
+                                                IsVisible="{Binding IsFullyPurchased, Converter={StaticResource InvertedBoolConverter}}"
+                                                Style="{StaticResource PrimaryButton}"
+                                                HeightRequest="30" Padding="8,0" FontSize="11" />
+                                    </ContentView>
                                 </VerticalStackLayout>
                             </Grid>
                         </Frame>

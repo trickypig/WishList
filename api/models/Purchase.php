@@ -55,10 +55,10 @@ class Purchase
         $stmt->execute(['item_id' => $itemId]);
         $total = (int) $stmt->fetchColumn();
 
-        // Whether the requester has purchased this item
-        $stmt = $db->prepare('SELECT 1 FROM purchases WHERE item_id = :item_id AND user_id = :user_id');
+        // Quantity the requester has purchased (0 if none); clients expect a number
+        $stmt = $db->prepare('SELECT COALESCE(SUM(quantity), 0) FROM purchases WHERE item_id = :item_id AND user_id = :user_id');
         $stmt->execute(['item_id' => $itemId, 'user_id' => $requesterId]);
-        $purchasedByMe = $stmt->fetch() !== false;
+        $purchasedByMe = (int) $stmt->fetchColumn();
 
         return [
             'total_purchased' => $total,

@@ -14,6 +14,9 @@ public partial class ListDetailViewModel : ObservableObject
 
     public ObservableCollection<Item> Items { get; } = [];
 
+    // Every item on the list; Items holds the ones the filter lets through
+    private List<Item> _allItems = [];
+
     [ObservableProperty]
     private int _listId;
 
@@ -24,7 +27,34 @@ public partial class ListDetailViewModel : ObservableObject
     private bool _isRefreshing;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(EmptyMessage))]
     private bool _isOwner;
+
+    /// <summary>On someone else's list, whether to include items that are fully purchased.</summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(EmptyMessage))]
+    private bool _showPurchased;
+
+    public string EmptyMessage =>
+        !IsOwner && !ShowPurchased && _allItems.Count > 0
+            ? "Everything on this list has been purchased."
+            : "No items in this list yet.";
+
+    partial void OnShowPurchasedChanged(bool value) => ApplyFilter();
+
+    [RelayCommand]
+    private void ToggleShowPurchased() => ShowPurchased = !ShowPurchased;
+
+    private void ApplyFilter()
+    {
+        Items.Clear();
+        foreach (var item in _allItems)
+        {
+            if (IsOwner || ShowPurchased || !item.IsFullyPurchased)
+                Items.Add(item);
+        }
+        OnPropertyChanged(nameof(EmptyMessage));
+    }
 
     [ObservableProperty]
     private string _errorMessage = string.Empty;
@@ -51,12 +81,8 @@ public partial class ListDetailViewModel : ObservableObject
             WishList = list;
             IsOwner = list.UserId == _authService.CurrentUser?.Id;
 
-            Items.Clear();
-            if (list.Items != null)
-            {
-                foreach (var item in list.Items)
-                    Items.Add(item);
-            }
+            _allItems = list.Items ?? [];
+            ApplyFilter();
         }
         catch (Exception ex)
         {
@@ -204,6 +230,7 @@ public partial class ListDetailViewModel : ObservableObject
         try
         {
             await _apiService.DeleteItemAsync(item.Id);
+            _allItems.Remove(item);
             Items.Remove(item);
         }
         catch (Exception ex)
@@ -267,7 +294,9 @@ public partial class ListDetailViewModel : ObservableObject
     {
         try
         {
-            var ids = Items.Select(i => i.Id).ToList();
+            // Only the owner reorders, and the owner's view is never filtered
+            _allItems = Items.ToList();
+            var ids = _allItems.Select(i => i.Id).ToList();
             await _apiService.ReorderItemsAsync(ListId, ids);
         }
         catch (Exception ex)

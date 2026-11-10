@@ -41,4 +41,8 @@ public class Item
     /// <summary>Whether to show the "(X purchased)" label.</summary>
     [JsonIgnore]
     public bool HasPurchases => TotalPurchased > 0;
+
+    /// <summary>Whether others have bought every one wanted. Always false for the list owner, who gets no purchase counts.</summary>
+    [JsonIgnore]
+    public bool IsFullyPurchased => TotalPurchased >= QuantityDesired;
 }

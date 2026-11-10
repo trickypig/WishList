@@ -72,7 +72,10 @@ public partial class BrowserViewModel : ObservableObject
 
             AllowedDomains.Clear();
             _allowedDomainSet.Clear();
-            foreach (var d in allDomains.Values.OrderBy(d => d.Domain))
+            var byName = allDomains.Values.OrderBy(
+                d => string.IsNullOrWhiteSpace(d.DisplayName) ? d.Domain : d.DisplayName,
+                StringComparer.CurrentCultureIgnoreCase);
+            foreach (var d in byName)
             {
                 AllowedDomains.Add(d);
                 _allowedDomainSet.Add(d.Domain.ToLowerInvariant());
@@ -107,7 +110,7 @@ public partial class BrowserViewModel : ObservableObject
     [RelayCommand]
     private void OpenSite(AllowedDomain domain)
     {
-        CurrentUrl = $"https://www.{domain.Domain}";
+        CurrentUrl = $"https://{domain.Domain}";
         ShowQuickLaunch = false;
         ShowBrowser = true;
     }
