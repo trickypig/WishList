@@ -1,0 +1,128 @@
+workflows:
+  ios-testflight:
+    name: Wish List iOS TestFlight
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    integrations:
+      # Name of the App Store Connect API key as added in the Codemagic UI
+      # (Teams/Personal Account -> Integrations -> App Store Connect).
+      # This integration is account-level and shared across apps: the same
+      # Apple team API key signs HouseRules, PlayMaker, Goldulf's Goons and
+      # Blood & Banners, so we reuse it rather than registering the .p8 again.
+      app_store_connect: House Rules
+    environment:
+      # Reuse matching files stored under Team settings > Code signing identities.
+      # Codemagic installs the certificate/private key and profile before scripts run.
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.trickypig.wish
+      vars:
+        DOTNET_PROJECT: "MAUI/WishList/WishList.csproj"
+        TARGET_FRAMEWORK: "net10.0-ios"
+        BUNDLE_ID: "com.trickypig.wish"
+      # Keep this paired with the pinned SDK/workload set in install_dotnet_ios.
+      # https://github.com/dotnet/macios/releases/tag/dotnet-10.0.1xx-xcode27.1-10018
+      xcode: "27.1"
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    scripts:
+      - &install_dotnet_ios
+        name: Install pinned .NET 10 SDK and MAUI workload
+        script: |
+          set -euo pipefail
+          # Update these together with Xcode in both iOS workflow environments.
+          # Workload set 10.0.402.1 contains iOS 27.1.10018, requiring Xcode 27.1.
+          DOTNET_SDK_VERSION="10.0.402"
+          DOTNET_WORKLOAD_VERSION="10.0.402.1"
+          # Use a dedicated install directory so preinstalled/cached newer SDKs
+          # cannot override the pinned SDK. Persist it for subsequent build steps.
+          export DOTNET_ROOT="$HOME/.dotnet-wish-ios/$DOTNET_SDK_VERSION"
+          curl -fsSL https://dot.net/v1/dotnet-install.sh -o /tmp/dotnet-install.sh
+          chmod +x /tmp/dotnet-install.sh
+          /tmp/dotnet-install.sh --version "$DOTNET_SDK_VERSION" --install-dir "$DOTNET_ROOT"
+          export PATH="$DOTNET_ROOT:$PATH"
+          echo "DOTNET_ROOT=$DOTNET_ROOT" >> "$CM_ENV"
+          echo "PATH=$DOTNET_ROOT:$PATH" >> "$CM_ENV"
+          xcodebuild -version
+          test "$(dotnet --version)" = "$DOTNET_SDK_VERSION"
+          dotnet workload install maui --version "$DOTNET_WORKLOAD_VERSION"
+          dotnet --info
+          dotnet workload --info
+      - name: Extract signing identity and profile name
+        script: |
+          set -euo pipefail
+          # dotnet publish needs the certificate common name and the
+          # provisioning profile NAME (not UUID). Extract both and persist
+          # them to $CM_ENV so the next script can use them.
+          CERT_NAME=$(keychain list-certificates \
+            | jq -r '[.[] | select(.common_name | test("Distribution")) | .common_name][0] // empty')
+          test -n "$CERT_NAME" || { echo "No distribution signing identity found." >&2; exit 1; }
+          PROFILE_PATH=$(find "$HOME/Library/MobileDevice/Provisioning Profiles" -name "*.mobileprovision" -print -quit)
+          test -n "$PROFILE_PATH" || { echo "No provisioning profile found." >&2; exit 1; }
+          PROFILE_NAME=$(security cms -D -i "$PROFILE_PATH" | plutil -extract Name raw -)
+          echo "Using certificate: $CERT_NAME"
+          echo "Using provisioning profile: $PROFILE_NAME"
+          echo "CERT_NAME=$CERT_NAME" >> "$CM_ENV"
+          echo "PROFILE_NAME=$PROFILE_NAME" >> "$CM_ENV"
+      - name: Compute next build number from TestFlight
+        script: |
+          set -euo pipefail
+          # Look up the app's numeric App Store id from its bundle id, then ask
+          # TestFlight for the highest build number already uploaded and add 1.
+          # The app record must already exist in App Store Connect.
+          # A successful lookup returns empty output when there are no builds yet.
+          APP_ID=$(app-store-connect apps list \
+            --bundle-id-identifier "$BUNDLE_ID" \
+            --strict-match-identifier \
+            --json | jq -r '.[0].id')
+          if [[ -z "$APP_ID" || "$APP_ID" == "null" ]]; then
+            echo "Create an App Store Connect app for $BUNDLE_ID before building." >&2
+            exit 1
+          fi
+          LATEST_BUILD_NUMBER=$(app-store-connect get-latest-testflight-build-number "$APP_ID" --platform IOS)
+          LATEST_BUILD_NUMBER=${LATEST_BUILD_NUMBER:-0}
+          if [[ ! "$LATEST_BUILD_NUMBER" =~ ^[0-9]+$ ]]; then
+            echo "Invalid TestFlight build number: $LATEST_BUILD_NUMBER" >&2
+            exit 1
+          fi
+          BUILD_NUMBER=$(( LATEST_BUILD_NUMBER + 1 ))
+          echo "Next build number: $BUILD_NUMBER"
+          echo "BUILD_NUMBER=$BUILD_NUMBER" >> "$CM_ENV"
+      - name: Build and sign iOS app
+        script: |
+          set -euo pipefail
+          dotnet publish "$DOTNET_PROJECT" \
+            -f "$TARGET_FRAMEWORK" \
+            -c Release \
+            -p:ArchiveOnBuild=true \
+            -p:BuildIpa=true \
+            -p:ApplicationId="$BUNDLE_ID" \
+            -p:ApplicationVersion="$BUILD_NUMBER" \
+            -p:RuntimeIdentifier=ios-arm64 \
+            -p:CodesignKey="$CERT_NAME" \
+            -p:CodesignProvision="$PROFILE_NAME"
+    artifacts:
+      - "**/*.ipa"
+      - /tmp/xcodebuild_logs/*.log
+    publishing:
+      app_store_connect:
+        auth: integration
+        # Upload for internal TestFlight testing; external beta review is separate.
+        submit_to_testflight: false
+        submit_to_app_store: false
+
+  ios-check:
+    name: iOS compile check
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      # Same toolchain as the signed TestFlight build.
+      xcode: "27.1"
+    scripts:
+      - *install_dotnet_ios
+      - name: Build iOS simulator
+        script: dotnet build MAUI/WishList/WishList.csproj -c Release -f net10.0-ios -p:RuntimeIdentifier=iossimulator-arm64

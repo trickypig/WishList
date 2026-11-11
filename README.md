@@ -199,6 +199,18 @@ dotnet publish -f net10.0-android -c Release
 # Output at: bin/Release/net10.0-android/publish/
 ```
 
+**iOS (TestFlight via Codemagic):**
+
+The `ios-testflight` workflow in `codemagic.yaml` follows Blood and Banners. It installs a pinned .NET 10 SDK and MAUI workload on a Codemagic Mac, signs an `ios-arm64` Release IPA, and uploads it to App Store Connect for internal TestFlight testing. The iOS bundle ID is `com.trickypig.wish`; the other platforms keep the project's default `ApplicationId`.
+
+One-time setup:
+1. In Apple Developer, register the App ID `com.trickypig.wish`. Then create the app record in App Store Connect; the workflow needs it to look up build numbers.
+2. Add this repository to the same Codemagic team as Blood and Banners, and give it access to the shared **House Rules** App Store Connect integration.
+3. Under **Team settings → codemagic.yaml settings → Code signing identities**, reuse the existing Apple Distribution certificate. Add an **App Store** provisioning profile for `com.trickypig.wish` that is linked to that certificate.
+4. Run **Wish List iOS TestFlight**. Pushes to `main` trigger it automatically once the webhook is connected.
+
+The build number is the latest TestFlight build number plus one. `ApplicationDisplayVersion` comes from the project. Xcode `27.1` is pinned together with SDK `10.0.402` and workload set `10.0.402.1`, so update all three together. The `ios-check` workflow only compiles the app for the simulator.
+
 ### Build Configurations Summary
 
 | Platform | Debug (test) | Release (production) |

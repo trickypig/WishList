@@ -32,6 +32,8 @@
 
 		<!-- App Identifier -->
 		<ApplicationId>com.companyname.wishlist</ApplicationId>
+		<!-- iOS ships under the App Store Connect bundle id; other platforms keep theirs -->
+		<ApplicationId Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">com.trickypig.wish</ApplicationId>
 
 		<!-- Versions -->
 		<ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
