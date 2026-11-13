@@ -30,6 +30,7 @@ require_once __DIR__ . '/models/WishList.php';
 require_once __DIR__ . '/models/Item.php';
 require_once __DIR__ . '/models/ItemGroup.php';
 require_once __DIR__ . '/models/Family.php';
+require_once __DIR__ . '/models/FamilyInvite.php';
 require_once __DIR__ . '/models/Purchase.php';
 require_once __DIR__ . '/models/AllowedDomain.php';
 

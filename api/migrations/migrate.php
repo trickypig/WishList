@@ -10,6 +10,7 @@ require_once __DIR__ . '/../config/database.php';
 require_once __DIR__ . '/../config/app.php';
 require_once __DIR__ . '/../models/PasswordReset.php';
 require_once __DIR__ . '/../models/ItemGroup.php';
+require_once __DIR__ . '/../models/FamilyInvite.php';
 
 echo "Starting migration...\n";
 
@@ -71,15 +72,7 @@ $db->exec("CREATE TABLE IF NOT EXISTS family_members (
 echo "  [OK] family_members\n";
 
 // ---- family_invites ----
-$db->exec("CREATE TABLE IF NOT EXISTS family_invites (
-    id {$autoIncrement},
-    family_id INTEGER NOT NULL,
-    email VARCHAR(255),
-    invited_by INTEGER NOT NULL,
-    created_at {$timestampType} NOT NULL,
-    FOREIGN KEY (family_id) REFERENCES families(id),
-    FOREIGN KEY (invited_by) REFERENCES users(id)
-)");
+FamilyInvite::createTable($db, $autoIncrement, $timestampType);
 echo "  [OK] family_invites\n";
 
 // ---- wish_lists ----
@@ -200,6 +193,35 @@ echo "  [OK] password_resets\n";
 ItemGroup::createTable($db, $autoIncrement, $timestampType);
 echo "  [OK] item_groups\n";
 
+// ---- Schema updates (safe to re-run) ----
+$alterStatements = [
+    "ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE users ADD COLUMN is_child INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0",
+    "ALTER TABLE items ADD COLUMN group_id INTEGER NULL",
+    "ALTER TABLE family_invites ADD COLUMN token_hash VARCHAR(64) NULL",
+    "ALTER TABLE family_invites ADD COLUMN expires_at {$timestampType} NULL",
+    "ALTER TABLE family_invites ADD COLUMN revoked_at {$timestampType} NULL",
+    "ALTER TABLE family_invites ADD COLUMN accepted_at {$timestampType} NULL",
+    "ALTER TABLE family_invites ADD COLUMN accepted_by INTEGER NULL",
+];
+
+foreach ($alterStatements as $sql) {
+    try {
+        $db->exec($sql);
+        echo "  [OK] " . substr($sql, 0, 60) . "...\n";
+    } catch (PDOException $e) {
+        $msg = $e->getMessage();
+        // Column already exists — skip silently
+        if (str_contains($msg, 'duplicate') || str_contains($msg, 'already exists') || str_contains($msg, 'Duplicate column')) {
+            echo "  [SKIP] " . substr($sql, 0, 60) . "... (already exists)\n";
+        } else {
+            echo "  [ERROR] " . substr($sql, 0, 60) . "...\n";
+            echo "    -> " . $msg . "\n";
+        }
+    }
+}
+
 // ---- Indexes ----
 $indexes = [
     'CREATE INDEX IF NOT EXISTS idx_users_email ON users(email)',
@@ -223,6 +245,8 @@ $indexes = [
     'CREATE INDEX IF NOT EXISTS idx_password_resets_token ON password_resets(token_hash)',
     'CREATE INDEX IF NOT EXISTS idx_password_resets_ip ON password_resets(client_ip)',
     'CREATE INDEX IF NOT EXISTS idx_item_groups_list ON item_groups(list_id)',
+    'CREATE INDEX IF NOT EXISTS idx_family_invites_token ON family_invites(token_hash)',
+    'CREATE INDEX IF NOT EXISTS idx_family_invites_family ON family_invites(family_id)',
 ];
 
 foreach ($indexes as $idx) {
@@ -236,30 +260,6 @@ foreach ($indexes as $idx) {
     }
 }
 echo "  [OK] indexes\n";
-
-// ---- Schema updates (safe to re-run) ----
-$alterStatements = [
-    "ALTER TABLE users ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0",
-    "ALTER TABLE users ADD COLUMN is_child INTEGER NOT NULL DEFAULT 0",
-    "ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0",
-    "ALTER TABLE items ADD COLUMN group_id INTEGER NULL",
-];
-
-foreach ($alterStatements as $sql) {
-    try {
-        $db->exec($sql);
-        echo "  [OK] " . substr($sql, 0, 60) . "...\n";
-    } catch (PDOException $e) {
-        $msg = $e->getMessage();
-        // Column already exists — skip silently
-        if (str_contains($msg, 'duplicate') || str_contains($msg, 'already exists') || str_contains($msg, 'Duplicate column')) {
-            echo "  [SKIP] " . substr($sql, 0, 60) . "... (already exists)\n";
-        } else {
-            echo "  [ERROR] " . substr($sql, 0, 60) . "...\n";
-            echo "    -> " . $msg . "\n";
-        }
-    }
-}
 
 // ---- Seed default allowed domains ----
 $defaultDomains = [
