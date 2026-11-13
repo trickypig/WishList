@@ -163,8 +163,17 @@ for ($i = 0; $i < 20; $i++) {
 }
 check('20 invites an hour are allowed', $ok);
 check('21st invite in an hour is refused', FamilyInvite::create($db, 1, 'extra@example.com', 1, $now + 100) === null);
-check('other families are unaffected', FamilyInvite::create($db, 2, 'extra@example.com', 1, $now + 100) !== null);
+check('other families are unaffected', FamilyInvite::create($db, 2, 'extra@example.com', 2, $now + 100) !== null);
 check('allowed again after the hour', FamilyInvite::create($db, 1, 'extra@example.com', 1, $now + 3601) !== null);
+
+$db = freshDb();
+for ($i = 0; $i < 20; $i++) {
+    FamilyInvite::create($db, 1 + ($i % 2), "p{$i}@example.com", 1, $now);
+}
+check('one person cannot send more than 20 an hour across families',
+    FamilyInvite::create($db, 2, 'extra@example.com', 1, $now + 100) === null);
+check('other senders are unaffected by one person\'s limit',
+    FamilyInvite::create($db, 2, 'extra@example.com', 2, $now + 100) !== null);
 
 $db = freshDb();
 for ($i = 0; $i < 20; $i++) {

@@ -10,6 +10,7 @@ class FamilyInvite
 {
     public const EXPIRES_SECONDS = 1209600; // 14 days
     public const FAMILY_LIMIT = 20;
+    public const INVITER_LIMIT = 20;
     public const FAMILY_WINDOW = 3600;
 
     public static function createTable(PDO $db, string $autoIncrement, string $timestampType): void
@@ -32,7 +33,7 @@ class FamilyInvite
 
     /**
      * Records a new invite link.
-     * Returns null when the family has sent too many invites in the last hour,
+     * Returns null when the family, or the sender across all families, has sent too many invites in the last hour,
      * otherwise the new invite's id and its raw token (which is never stored).
      */
     public static function create(PDO $db, int $familyId, string $email, int $invitedBy, ?int $now = null): ?array
@@ -45,6 +46,16 @@ class FamilyInvite
         );
         $stmt->execute(['family_id' => $familyId, 'since' => self::time($now - self::FAMILY_WINDOW)]);
         if ((int) $stmt->fetchColumn() >= self::FAMILY_LIMIT) {
+            return null;
+        }
+
+        // Also limit each sender across all families, since anyone can create new families.
+        $stmt = $db->prepare(
+            'SELECT COUNT(*) FROM family_invites
+             WHERE invited_by = :invited_by AND token_hash IS NOT NULL AND created_at >= :since'
+        );
+        $stmt->execute(['invited_by' => $invitedBy, 'since' => self::time($now - self::FAMILY_WINDOW)]);
+        if ((int) $stmt->fetchColumn() >= self::INVITER_LIMIT) {
             return null;
         }
 
