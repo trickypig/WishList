@@ -1,8 +1,8 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { getFamily, inviteToFamily, removeFamilyMember, setChildStatus, getFamilyDomains, addFamilyDomain, removeFamilyDomain } from '../api/client';
-import type { Family, AllowedDomain } from '../types';
+import { getFamily, inviteToFamily, getFamilyInvites, resendFamilyInvite, revokeFamilyInvite, removeFamilyMember, setChildStatus, getFamilyDomains, addFamilyDomain, removeFamilyDomain } from '../api/client';
+import type { Family, AllowedDomain, FamilyInviteSummary } from '../types';
 import MemberList from '../components/families/MemberList';
 
 export default function FamilyManagePage() {
@@ -18,6 +18,8 @@ export default function FamilyManagePage() {
   const [inviting, setInviting] = useState(false);
   const [inviteSuccess, setInviteSuccess] = useState('');
   const [copied, setCopied] = useState(false);
+  const [invites, setInvites] = useState<FamilyInviteSummary[]>([]);
+  const [busyInviteId, setBusyInviteId] = useState<number | null>(null);
 
   // Domain management state
   const [domains, setDomains] = useState<AllowedDomain[]>([]);
@@ -35,6 +37,9 @@ export default function FamilyManagePage() {
       setFamily(res.family);
       // Load domains if user is a parent admin
       loadDomains();
+      if (res.family.role === 'admin') {
+        loadInvites();
+      }
     } catch {
       setError('Failed to load family');
     } finally {
@@ -51,6 +56,15 @@ export default function FamilyManagePage() {
     }
   }
 
+  async function loadInvites() {
+    try {
+      const res = await getFamilyInvites(Number(id));
+      setInvites(res.invites);
+    } catch {
+      // Non-critical — the invite links list just won't show data
+    }
+  }
+
   async function handleInvite(e: FormEvent) {
     e.preventDefault();
     setInviting(true);
@@ -60,6 +74,7 @@ export default function FamilyManagePage() {
       await inviteToFamily(Number(id), inviteEmail);
       setInviteSuccess(`Invite sent to ${inviteEmail}`);
       setInviteEmail('');
+      loadInvites();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to send invite');
     } finally {
@@ -67,8 +82,38 @@ export default function FamilyManagePage() {
     }
   }
 
+  async function handleResendInvite(invite: FamilyInviteSummary) {
+    setBusyInviteId(invite.id);
+    setError('');
+    setInviteSuccess('');
+    try {
+      await resendFamilyInvite(Number(id), invite.id);
+      setInviteSuccess(`Invite sent to ${invite.email}`);
+      loadInvites();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to resend invite');
+    } finally {
+      setBusyInviteId(null);
+    }
+  }
+
+  async function handleRevokeInvite(invite: FamilyInviteSummary) {
+    if (!confirm(`Revoke all invite links sent to ${invite.email}? Anyone who already joined stays in the family.`)) return;
+    setBusyInviteId(invite.id);
+    setError('');
+    setInviteSuccess('');
+    try {
+      await revokeFamilyInvite(Number(id), invite.id);
+      loadInvites();
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to revoke invite');
+    } finally {
+      setBusyInviteId(null);
+    }
+  }
+
   async function handleRemoveMember(userId: number) {
-    if (!confirm('Remove this member from the family?')) return;
+    if (!confirm('Remove this member from the family? Any invite links they were sent still work until revoked under Invite links.')) return;
     try {
       await removeFamilyMember(Number(id), userId);
       loadFamily();
@@ -200,6 +245,36 @@ export default function FamilyManagePage() {
         </div>
       )}
 
+      {isAdmin && (
+        <div className="card">
+          <h3>Invite Links</h3>
+          <p className="text-muted">Links stay valid for 14 days, even after someone uses them. Revoke a link to stop it working.</p>
+          {invites.length === 0 ? (
+            <p className="text-muted">No active invite links.</p>
+          ) : (
+            invites.map((inv) => (
+              <div key={inv.id} className="member-row" style={{ padding: '0.5rem 0' }}>
+                <div className="member-info">
+                  <span className="member-name">{inv.email}</span>
+                  <span className="member-email">
+                    Sent by {inv.invited_by_name} on {formatServerDate(inv.created_at)} · Expires {formatServerDate(inv.expires_at)}
+                    {inv.accepted_by_name && <> · Used by {inv.accepted_by_name}</>}
+                  </span>
+                </div>
+                <div className="member-actions">
+                  <button className="btn btn-sm btn-outline" onClick={() => handleResendInvite(inv)} disabled={busyInviteId === inv.id}>
+                    Resend
+                  </button>
+                  <button className="btn btn-sm btn-danger" onClick={() => handleRevokeInvite(inv)} disabled={busyInviteId === inv.id}>
+                    Revoke
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
       {isParent && (
         <div className="card">
           <h3>Allowed Shopping Domains</h3>
@@ -252,4 +327,9 @@ export default function FamilyManagePage() {
       )}
     </div>
   );
+}
+
+/** Server timestamps are UTC 'YYYY-MM-DD HH:MM:SS'; show them as a local date. */
+function formatServerDate(value: string): string {
+  return new Date(value.replace(' ', 'T') + 'Z').toLocaleDateString();
 }

@@ -65,6 +65,9 @@ function registerFamilyRoutes(Router $router, PDO $db): void
             Response::notFound('Family not found');
         }
 
+        // The caller's own role, which the family page uses to show admin controls
+        $family['role'] = Family::getMemberRole($db, $familyId, $user['id']);
+
         Response::json(['family' => $family]);
     });
 
