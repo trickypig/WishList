@@ -266,7 +266,12 @@ The build number is the latest TestFlight build number plus one. `ApplicationDis
 | POST | `/api/families` | Yes | Create family |
 | POST | `/api/families/join` | Yes | Join family via invite code |
 | GET | `/api/families/{id}` | Yes | Get family with members |
-| POST | `/api/families/{id}/invite` | Yes | Generate invite code (admin only) |
+| POST | `/api/families/{id}/invite` | Yes | Email an invite link (admin only) |
+| GET | `/api/families/{id}/invites` | Yes | List live invite links (admin only) |
+| POST | `/api/families/{id}/invites/{inviteId}/resend` | Yes | Email a fresh invite link (admin only) |
+| DELETE | `/api/families/{id}/invites/{inviteId}` | Yes | Revoke invite links to that email (admin only) |
+| GET | `/api/invites/{token}` | No | Invite link details |
+| POST | `/api/invites/{token}/accept` | Yes | Join the family from an invite link |
 | PUT | `/api/families/{id}/members/{userId}/child-status` | Yes | Toggle child status (admin only) |
 | DELETE | `/api/families/{id}/members/{userId}` | Yes | Remove member or leave family |
 | GET | `/api/families/{id}/domains` | Yes | Get allowed scraping domains |

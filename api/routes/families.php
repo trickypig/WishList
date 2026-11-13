@@ -68,43 +68,70 @@ function registerFamilyRoutes(Router $router, PDO $db): void
         Response::json(['family' => $family]);
     });
 
-    // POST /families/{id}/invite - generate/return invite code (admin only)
-    $router->post('/families/{id}/invite', function (array $params) use ($db) {
-        $user = authenticate();
-        $familyId = (int) $params['id'];
-
-        $role = Family::getMemberRole($db, $familyId, $user['id']);
-        if ($role !== 'admin') {
+    // Loads the family for an admin-only invite route, or sends an error response.
+    $requireAdminFamily = function (int $familyId, array $user) use ($db): array {
+        if (Family::getMemberRole($db, $familyId, $user['id']) !== 'admin') {
             Response::error('Only admins can invite members', 403);
         }
-
         $family = Family::getById($db, $familyId);
         if (!$family) {
             Response::notFound('Family not found');
         }
+        return $family;
+    };
 
-        // Store the invite record (email is optional context, invite code is on the family)
-        $body = $params['_body'];
-        $email = $body['email'] ?? null;
+    // POST /families/{id}/invite - email an invite link (admin only)
+    $router->post('/families/{id}/invite', function (array $params) use ($db, $requireAdminFamily) {
+        $user = authenticate();
+        $family = $requireAdminFamily((int) $params['id'], $user);
 
-        if ($email) {
-            // Store invite record for tracking
-            $stmt = $db->prepare(
-                'INSERT INTO family_invites (family_id, email, invited_by, created_at)
-                 VALUES (:family_id, :email, :invited_by, :created_at)'
-            );
-            $stmt->execute([
-                'family_id'  => $familyId,
-                'email'      => $email,
-                'invited_by' => $user['id'],
-                'created_at' => date('Y-m-d H:i:s'),
-            ]);
+        $email = trim((string) ($params['_body']['email'] ?? ''));
+        if (!Validator::email($email)) {
+            Response::error('Invalid email format');
         }
+
+        $invite = createAndSendInvite($db, $family, $email, $user);
 
         Response::json([
             'invite_code' => $family['invite_code'],
             'family_name' => $family['name'],
-        ]);
+            'invite'      => $invite,
+        ], 201);
+    });
+
+    // GET /families/{id}/invites - live invite links (admin only)
+    $router->get('/families/{id}/invites', function (array $params) use ($db, $requireAdminFamily) {
+        $user = authenticate();
+        $family = $requireAdminFamily((int) $params['id'], $user);
+
+        Response::json(['invites' => FamilyInvite::listLive($db, (int) $family['id'])]);
+    });
+
+    // POST /families/{id}/invites/{inviteId}/resend - email a fresh link to the same address (admin only)
+    $router->post('/families/{id}/invites/{inviteId}/resend', function (array $params) use ($db, $requireAdminFamily) {
+        $user = authenticate();
+        $family = $requireAdminFamily((int) $params['id'], $user);
+
+        $existing = FamilyInvite::findInFamily($db, (int) $family['id'], (int) $params['inviteId']);
+        if (!$existing) {
+            Response::notFound('Invite not found');
+        }
+
+        Response::json(['invite' => createAndSendInvite($db, $family, $existing['email'], $user)], 201);
+    });
+
+    // DELETE /families/{id}/invites/{inviteId} - revoke every link sent to that address (admin only)
+    $router->delete('/families/{id}/invites/{inviteId}', function (array $params) use ($db, $requireAdminFamily) {
+        $user = authenticate();
+        $family = $requireAdminFamily((int) $params['id'], $user);
+
+        $existing = FamilyInvite::findInFamily($db, (int) $family['id'], (int) $params['inviteId']);
+        if (!$existing) {
+            Response::notFound('Invite not found');
+        }
+
+        FamilyInvite::revokeForEmail($db, (int) $family['id'], $existing['email']);
+        Response::json(['message' => 'Invite links revoked']);
     });
 
     // PUT /families/{id}/members/{userId}/child-status - toggle is_child flag

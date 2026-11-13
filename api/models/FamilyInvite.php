@@ -129,17 +129,20 @@ class FamilyInvite
         );
         $stmt->execute(['family_id' => $familyId, 'now' => self::time($now)]);
 
-        $seen = [];
-        $invites = [];
+        // Keep the newest row per email. If an older live link to that email was used, show that use,
+        // since the older link still works and the admin may want to revoke it.
+        $byEmail = [];
         foreach ($stmt->fetchAll() as $row) {
-            if (isset($seen[$row['email']])) {
-                continue;
+            $email = $row['email'];
+            if (!isset($byEmail[$email])) {
+                $row['id'] = (int) $row['id'];
+                $byEmail[$email] = $row;
+            } elseif ($byEmail[$email]['accepted_at'] === null && $row['accepted_at'] !== null) {
+                $byEmail[$email]['accepted_at'] = $row['accepted_at'];
+                $byEmail[$email]['accepted_by_name'] = $row['accepted_by_name'];
             }
-            $seen[$row['email']] = true;
-            $row['id'] = (int) $row['id'];
-            $invites[] = $row;
         }
-        return $invites;
+        return array_values($byEmail);
     }
 
     public static function findInFamily(PDO $db, int $familyId, int $inviteId): array|false

@@ -136,6 +136,14 @@ check('resend leaves the old token valid', FamilyInvite::findValid($db, $old['to
 
 echo "Listing\n";
 $db = freshDb();
+$used = FamilyInvite::create($db, 1, 'mom@example.com', 1, $now);
+FamilyInvite::accept($db, FamilyInvite::findValid($db, $used['token'], $now), 2, $now + 1);
+FamilyInvite::create($db, 1, 'mom@example.com', 1, $now + 60);
+$live = FamilyInvite::listLive($db, 1, $now + 120);
+check('resent row still shows an older link was used', count($live) === 1 && $live[0]['accepted_by_name'] === 'Two'
+    && $live[0]['accepted_at'] === gmdate('Y-m-d H:i:s', $now + 1));
+
+$db = freshDb();
 $r = FamilyInvite::create($db, 1, 'mom@example.com', 1, $now);
 FamilyInvite::accept($db, FamilyInvite::findValid($db, $r['token'], $now), 2, $now + 1);
 FamilyInvite::create($db, 1, 'dad@example.com', 1, $now + 10);
