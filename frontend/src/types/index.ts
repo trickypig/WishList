@@ -89,6 +89,25 @@ export interface Family {
   members?: FamilyMember[];
 }
 
+export interface InvitePreview {
+  family_id: number;
+  family_name: string;
+  inviter_name: string;
+  email: string;
+  account_exists: boolean;
+  expires_at: string;
+}
+
+export interface FamilyInviteSummary {
+  id: number;
+  email: string;
+  invited_by_name: string;
+  created_at: string;
+  expires_at: string;
+  accepted_at: string | null;
+  accepted_by_name: string | null;
+}
+
 export interface FamilyMember {
   user_id: number;
   display_name: string;

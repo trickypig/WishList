@@ -1,15 +1,17 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { finishInviteAfterAuth, inviteQuery, readInviteParams } from './inviteFlow';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const location = useLocation();
+  const { invite, email: inviteEmail } = readInviteParams(location.search);
+  const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -17,7 +19,11 @@ export default function LoginPage() {
     setSubmitting(true);
     try {
       await login(email, password);
-      navigate('/dashboard');
+      if (invite) {
+        await finishInviteAfterAuth(invite, navigate);
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -29,7 +35,9 @@ export default function LoginPage() {
     <div className="auth-page">
       <div className="auth-card">
         <h1>Welcome Back</h1>
-        <p className="auth-subtitle">Sign in to manage your wish lists</p>
+        <p className="auth-subtitle">
+          {invite ? 'Sign in to accept your family invite' : 'Sign in to manage your wish lists'}
+        </p>
         {location.state?.message && !error && <div className="success-message">{location.state.message}</div>}
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
@@ -65,7 +73,11 @@ export default function LoginPage() {
           <Link to="/forgot-password" state={{ email }}>Forgot password?</Link>
         </p>
         <p className="auth-footer">
-          Don't have an account? <Link to="/register">Create one</Link>
+          {invite ? (
+            <Link to={'/register' + inviteQuery(invite, inviteEmail)}>Create a new account instead</Link>
+          ) : (
+            <>Don't have an account? <Link to="/register">Create one</Link></>
+          )}
         </p>
       </div>
     </div>

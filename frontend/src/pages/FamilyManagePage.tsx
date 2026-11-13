@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { getFamily, inviteToFamily, removeFamilyMember, setChildStatus, getFamilyDomains, addFamilyDomain, removeFamilyDomain } from '../api/client';
 import type { Family, AllowedDomain } from '../types';
@@ -9,6 +9,8 @@ export default function FamilyManagePage() {
   const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const joinedMessage = (location.state as { message?: string } | null)?.message ?? '';
   const [family, setFamily] = useState<Family | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -149,6 +151,7 @@ export default function FamilyManagePage() {
     <div className="page">
       <h1>{family.name}</h1>
 
+      {joinedMessage && !error && <div className="success-message">{joinedMessage}</div>}
       {error && <div className="error-message">{error}</div>}
       {inviteSuccess && <div className="success-message">{inviteSuccess}</div>}
 

@@ -1,7 +1,7 @@
-import type { User, WishList, Item, ItemGroup, Family, Purchase, ScrapeLog, AdminStats, AllowedDomain } from '../types';
+import type { User, WishList, Item, ItemGroup, Family, Purchase, ScrapeLog, AdminStats, AllowedDomain, InvitePreview, FamilyInviteSummary } from '../types';
 
 const BASE_URL = import.meta.env.DEV ? 'http://localhost:8080' : '';
-const PAGES_WITHOUT_LOGIN_REDIRECT = ['/forgot-password', '/reset-password'];
+const PAGES_WITHOUT_LOGIN_REDIRECT = ['/forgot-password', '/reset-password', '/invite'];
 
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = {
@@ -186,8 +186,34 @@ export function joinFamily(invite_code: string) {
   return apiClient.post<{ family: Family }>('/families/join', { invite_code });
 }
 
+export interface SentInvite {
+  id: number;
+  email: string;
+  expires_at: string;
+}
+
 export function inviteToFamily(familyId: number, email: string) {
-  return apiClient.post<{ invite: unknown }>(`/families/${familyId}/invite`, { email });
+  return apiClient.post<{ invite_code: string; family_name: string; invite: SentInvite }>(`/families/${familyId}/invite`, { email });
+}
+
+export function getFamilyInvites(familyId: number) {
+  return apiClient.get<{ invites: FamilyInviteSummary[] }>(`/families/${familyId}/invites`);
+}
+
+export function resendFamilyInvite(familyId: number, inviteId: number) {
+  return apiClient.post<{ invite: SentInvite }>(`/families/${familyId}/invites/${inviteId}/resend`);
+}
+
+export function revokeFamilyInvite(familyId: number, inviteId: number) {
+  return apiClient.delete<{ message: string }>(`/families/${familyId}/invites/${inviteId}`);
+}
+
+export function getInvite(token: string) {
+  return apiClient.get<InvitePreview>(`/invites/${encodeURIComponent(token)}`);
+}
+
+export function acceptInvite(token: string) {
+  return apiClient.post<{ family: Family; already_member: boolean }>(`/invites/${encodeURIComponent(token)}/accept`);
 }
 
 export function removeFamilyMember(familyId: number, userId: number) {

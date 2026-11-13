@@ -1,9 +1,12 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { finishInviteAfterAuth, inviteQuery, readInviteParams } from './inviteFlow';
 
 export default function RegisterPage() {
-  const [email, setEmail] = useState('');
+  const location = useLocation();
+  const { invite, email: inviteEmail } = readInviteParams(location.search);
+  const [email, setEmail] = useState(inviteEmail);
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [error, setError] = useState('');
@@ -17,7 +20,11 @@ export default function RegisterPage() {
     setSubmitting(true);
     try {
       await register(email, password, displayName);
-      navigate('/dashboard');
+      if (invite) {
+        await finishInviteAfterAuth(invite, navigate);
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Registration failed');
     } finally {
@@ -29,7 +36,9 @@ export default function RegisterPage() {
     <div className="auth-page">
       <div className="auth-card">
         <h1>Create Account</h1>
-        <p className="auth-subtitle">Start creating and sharing wish lists</p>
+        <p className="auth-subtitle">
+          {invite ? 'Create your account to accept your family invite' : 'Start creating and sharing wish lists'}
+        </p>
         {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
@@ -74,7 +83,7 @@ export default function RegisterPage() {
           </button>
         </form>
         <p className="auth-footer">
-          Already have an account? <Link to="/login">Sign in</Link>
+          Already have an account? <Link to={invite ? '/login' + inviteQuery(invite, inviteEmail) : '/login'}>Sign in</Link>
         </p>
       </div>
     </div>
