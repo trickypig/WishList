@@ -1,4 +1,4 @@
-import type { User, WishList, Item, ItemGroup, Family, Purchase, ScrapeLog, AdminStats, AllowedDomain, InvitePreview, FamilyInviteSummary } from '../types';
+import type { User, WishList, Item, ItemGroup, Family, Purchase, ScrapeLog, AdminStats, AllowedDomain, InvitePreview, FamilyInviteSummary, PendingInvite } from '../types';
 
 const BASE_URL = import.meta.env.DEV ? 'http://localhost:8080' : '';
 const PAGES_WITHOUT_LOGIN_REDIRECT = ['/forgot-password', '/reset-password', '/invite'];
@@ -210,6 +210,18 @@ export function revokeFamilyInvite(familyId: number, inviteId: number) {
 
 export function getInvite(token: string) {
   return apiClient.get<InvitePreview>(`/invites/${encodeURIComponent(token)}`);
+}
+
+export function getMyInvites() {
+  return apiClient.get<{ invites: PendingInvite[] }>('/my-invites');
+}
+
+export function acceptMyInvite(inviteId: number) {
+  return apiClient.post<{ family: Family; already_member: boolean }>(`/my-invites/${inviteId}/accept`);
+}
+
+export function declineMyInvite(inviteId: number) {
+  return apiClient.post<{ message: string }>(`/my-invites/${inviteId}/decline`);
 }
 
 export function acceptInvite(token: string) {

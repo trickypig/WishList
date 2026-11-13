@@ -192,5 +192,68 @@ $r = FamilyInvite::create($db, 1, 'mom@example.com', 1, $now);
 check('findInFamily is scoped', FamilyInvite::findInFamily($db, 1, $r['id']) !== false
     && FamilyInvite::findInFamily($db, 2, $r['id']) === false);
 
+echo "Pending offers for a signed-in person\n";
+$db = freshDb();
+FamilyInvite::create($db, 1, 'Two@Example.com', 1, $now);
+$pending = FamilyInvite::pendingForUser($db, 2, 'two@example.com', $now + 10);
+check('offer matches the account email in any case', count($pending) === 1
+    && $pending[0]['family_name'] === 'Smith' && $pending[0]['inviter_name'] === 'Alex Admin'
+    && (int) $pending[0]['family_id'] === 1);
+check('other accounts are not offered it', FamilyInvite::pendingForUser($db, 3, 'three@example.com', $now + 10) === []);
+check('offer is matched by email even if the account email has odd case',
+    count(FamilyInvite::pendingForUser($db, 2, ' TWO@example.COM ', $now + 10)) === 1);
+
+$db = freshDb();
+FamilyInvite::create($db, 1, 'two@example.com', 1, $now);
+$newest = FamilyInvite::create($db, 1, 'two@example.com', 1, $now + 60);
+FamilyInvite::create($db, 2, 'two@example.com', 1, $now + 60);
+$pending = FamilyInvite::pendingForUser($db, 2, 'two@example.com', $now + 120);
+$fam1 = array_values(array_filter($pending, fn($p) => (int) $p['family_id'] === 1));
+check('one offer per family, using the newest invite', count($pending) === 2
+    && count($fam1) === 1 && (int) $fam1[0]['id'] === $newest['id']);
+
+Family::addMember($db, 1, 2);
+check('members are not offered their own family', count(FamilyInvite::pendingForUser($db, 2, 'two@example.com', $now + 120)) === 1);
+
+$db = freshDb();
+FamilyInvite::create($db, 1, 'two@example.com', 1, $now);
+check('expired invites are not offered', FamilyInvite::pendingForUser($db, 2, 'two@example.com', $now + 1209600) === []);
+FamilyInvite::revokeForEmail($db, 1, 'two@example.com', $now + 10);
+check('revoked invites are not offered', FamilyInvite::pendingForUser($db, 2, 'two@example.com', $now + 20) === []);
+
+echo "Declining\n";
+$db = freshDb();
+$a = FamilyInvite::create($db, 1, 'two@example.com', 1, $now);
+$b = FamilyInvite::create($db, 1, 'two@example.com', 1, $now + 5);
+FamilyInvite::create($db, 2, 'two@example.com', 1, $now + 5);
+$declined = FamilyInvite::declineForUser($db, 1, 2, 'Two@example.com', $now + 10);
+$pending = FamilyInvite::pendingForUser($db, 2, 'two@example.com', $now + 20);
+check('decline hides every current invite from that family', $declined === 2
+    && count($pending) === 1 && (int) $pending[0]['family_id'] === 2);
+check('declined links still work', FamilyInvite::findValid($db, $a['token'], $now + 20) !== false
+    && FamilyInvite::findValid($db, $b['token'], $now + 20) !== false);
+FamilyInvite::create($db, 1, 'two@example.com', 1, $now + 30);
+check('a new invite after declining is offered again',
+    count(FamilyInvite::pendingForUser($db, 2, 'two@example.com', $now + 40)) === 2);
+
+$db = freshDb();
+FamilyInvite::create($db, 1, 'two@example.com', 1, $now);
+FamilyInvite::declineForUser($db, 1, 2, 'two@example.com', $now + 10);
+$live = FamilyInvite::listLive($db, 1, $now + 20);
+check('admin list shows who declined', count($live) === 1 && $live[0]['declined_by_name'] === 'Two'
+    && $live[0]['declined_at'] === gmdate('Y-m-d H:i:s', $now + 10));
+FamilyInvite::create($db, 1, 'two@example.com', 1, $now + 30);
+$live = FamilyInvite::listLive($db, 1, $now + 40);
+check('a resent invite is not shown as declined', $live[0]['declined_by_name'] === null);
+
+echo "Accepting an offer\n";
+$db = freshDb();
+$r = FamilyInvite::create($db, 1, 'two@example.com', 1, $now);
+check('offer can be found by the invited account', FamilyInvite::findPendingForUser($db, $r['id'], 'TWO@example.com', $now + 10) !== false);
+check('offer cannot be used by another account', FamilyInvite::findPendingForUser($db, $r['id'], 'three@example.com', $now + 10) === false);
+check('expired offer cannot be used', FamilyInvite::findPendingForUser($db, $r['id'], 'two@example.com', $now + 1209600) === false);
+FamilyInvite::revokeForEmail($db, 1, 'two@example.com', $now + 20);
+check('revoked offer cannot be used', FamilyInvite::findPendingForUser($db, $r['id'], 'two@example.com', $now + 30) === false);
+
 echo $failures === 0 ? "\nAll tests passed.\n" : "\n{$failures} test(s) failed.\n";
 exit($failures === 0 ? 0 : 1);

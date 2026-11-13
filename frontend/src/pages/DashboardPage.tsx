@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { getLists, createList, getFamilies } from '../api/client';
 import type { WishList, Family } from '../types';
 import ListCard from '../components/lists/ListCard';
+import PendingInvitesBanner from '../components/families/PendingInvitesBanner';
 
 export default function DashboardPage() {
   const [lists, setLists] = useState<WishList[]>([]);
@@ -53,6 +54,7 @@ export default function DashboardPage() {
   return (
     <div className="dashboard-layout">
       <main className="dashboard-main">
+        <PendingInvitesBanner />
         <div className="section-header">
           <h1>My Wish Lists</h1>
           <button className="btn btn-primary" onClick={() => setShowForm(!showForm)}>

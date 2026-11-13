@@ -259,6 +259,7 @@ export default function FamilyManagePage() {
                   <span className="member-email">
                     Sent by {inv.invited_by_name} on {formatServerDate(inv.created_at)} · Expires {formatServerDate(inv.expires_at)}
                     {inv.accepted_by_name && <> · Used by {inv.accepted_by_name}</>}
+                    {inv.declined_by_name && <> · Declined by {inv.declined_by_name}</>}
                   </span>
                 </div>
                 <div className="member-actions">

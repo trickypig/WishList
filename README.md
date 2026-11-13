@@ -272,6 +272,9 @@ The build number is the latest TestFlight build number plus one. `ApplicationDis
 | DELETE | `/api/families/{id}/invites/{inviteId}` | Yes | Revoke invite links to that email (admin only) |
 | GET | `/api/invites/{token}` | No | Invite link details |
 | POST | `/api/invites/{token}/accept` | Yes | Join the family from an invite link |
+| GET | `/api/my-invites` | Yes | Pending invites sent to your email |
+| POST | `/api/my-invites/{id}/accept` | Yes | Join from an invite sent to your email |
+| POST | `/api/my-invites/{id}/decline` | Yes | Decline a family's invites to your email |
 | PUT | `/api/families/{id}/members/{userId}/child-status` | Yes | Toggle child status (admin only) |
 | DELETE | `/api/families/{id}/members/{userId}` | Yes | Remove member or leave family |
 | GET | `/api/families/{id}/domains` | Yes | Get allowed scraping domains |

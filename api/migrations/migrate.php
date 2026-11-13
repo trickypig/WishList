@@ -204,6 +204,8 @@ $alterStatements = [
     "ALTER TABLE family_invites ADD COLUMN revoked_at {$timestampType} NULL",
     "ALTER TABLE family_invites ADD COLUMN accepted_at {$timestampType} NULL",
     "ALTER TABLE family_invites ADD COLUMN accepted_by INTEGER NULL",
+    "ALTER TABLE family_invites ADD COLUMN declined_at {$timestampType} NULL",
+    "ALTER TABLE family_invites ADD COLUMN declined_by INTEGER NULL",
 ];
 
 foreach ($alterStatements as $sql) {

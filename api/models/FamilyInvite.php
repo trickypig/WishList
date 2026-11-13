@@ -25,6 +25,8 @@ class FamilyInvite
             revoked_at {$timestampType} NULL,
             accepted_at {$timestampType} NULL,
             accepted_by INTEGER NULL,
+            declined_at {$timestampType} NULL,
+            declined_by INTEGER NULL,
             created_at {$timestampType} NOT NULL,
             FOREIGN KEY (family_id) REFERENCES families(id),
             FOREIGN KEY (invited_by) REFERENCES users(id)
@@ -130,10 +132,12 @@ class FamilyInvite
 
         $stmt = $db->prepare(
             'SELECT fi.id, fi.email, inviter.display_name AS invited_by_name, fi.created_at, fi.expires_at,
-                    fi.accepted_at, used.display_name AS accepted_by_name
+                    fi.accepted_at, used.display_name AS accepted_by_name,
+                    fi.declined_at, declined.display_name AS declined_by_name
              FROM family_invites fi
              JOIN users inviter ON inviter.id = fi.invited_by
              LEFT JOIN users used ON used.id = fi.accepted_by
+             LEFT JOIN users declined ON declined.id = fi.declined_by
              WHERE fi.family_id = :family_id AND fi.token_hash IS NOT NULL
                AND fi.revoked_at IS NULL AND fi.expires_at > :now
              ORDER BY fi.created_at DESC, fi.id DESC'
@@ -163,6 +167,78 @@ class FamilyInvite
         );
         $stmt->execute(['id' => $inviteId, 'family_id' => $familyId]);
         return $stmt->fetch();
+    }
+
+    /**
+     * Families inviting this person, by a live invite to their email address that they haven't declined,
+     * excluding families they already belong to. One row per family: its newest such invite.
+     */
+    public static function pendingForUser(PDO $db, int $userId, string $email, ?int $now = null): array
+    {
+        $now ??= time();
+
+        $stmt = $db->prepare(
+            'SELECT fi.id, fi.family_id, f.name AS family_name, u.display_name AS inviter_name,
+                    fi.created_at, fi.expires_at
+             FROM family_invites fi
+             JOIN families f ON f.id = fi.family_id
+             JOIN users u ON u.id = fi.invited_by
+             WHERE fi.email = :email AND fi.token_hash IS NOT NULL
+               AND fi.revoked_at IS NULL AND fi.declined_at IS NULL AND fi.expires_at > :now
+               AND NOT EXISTS (
+                   SELECT 1 FROM family_members fm WHERE fm.family_id = fi.family_id AND fm.user_id = :user_id
+               )
+             ORDER BY fi.created_at DESC, fi.id DESC'
+        );
+        $stmt->execute(['email' => self::normalizeEmail($email), 'now' => self::time($now), 'user_id' => $userId]);
+
+        $byFamily = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $familyId = (int) $row['family_id'];
+            if (!isset($byFamily[$familyId])) {
+                $row['id'] = (int) $row['id'];
+                $row['family_id'] = $familyId;
+                $byFamily[$familyId] = $row;
+            }
+        }
+        return array_values($byFamily);
+    }
+
+    /** A live invite with this id sent to this email address, or false. Used to accept an offer without the link. */
+    public static function findPendingForUser(PDO $db, int $inviteId, string $email, ?int $now = null): array|false
+    {
+        $now ??= time();
+
+        $stmt = $db->prepare(
+            'SELECT * FROM family_invites
+             WHERE id = :id AND email = :email AND token_hash IS NOT NULL
+               AND revoked_at IS NULL AND expires_at > :now'
+        );
+        $stmt->execute(['id' => $inviteId, 'email' => self::normalizeEmail($email), 'now' => self::time($now)]);
+        return $stmt->fetch();
+    }
+
+    /**
+     * Declines a family's current invites to this person's email, so the offer stops showing.
+     * The links themselves keep working. Returns how many invites were declined.
+     */
+    public static function declineForUser(PDO $db, int $familyId, int $userId, string $email, ?int $now = null): int
+    {
+        $now ??= time();
+
+        $stmt = $db->prepare(
+            'UPDATE family_invites SET declined_at = :now, declined_by = :user_id
+             WHERE family_id = :family_id AND email = :email AND token_hash IS NOT NULL
+               AND revoked_at IS NULL AND declined_at IS NULL AND expires_at > :now2'
+        );
+        $stmt->execute([
+            'now'       => self::time($now),
+            'now2'      => self::time($now),
+            'user_id'   => $userId,
+            'family_id' => $familyId,
+            'email'     => self::normalizeEmail($email),
+        ]);
+        return $stmt->rowCount();
     }
 
     /** Revokes every live invite to an email address in a family. Returns how many were revoked. */

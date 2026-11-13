@@ -2,6 +2,7 @@ import { useState, useEffect, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { getFamilies, createFamily, joinFamily } from '../api/client';
 import type { Family } from '../types';
+import PendingInvitesBanner from '../components/families/PendingInvitesBanner';
 
 export default function FamiliesPage() {
   const [families, setFamilies] = useState<Family[]>([]);
@@ -69,6 +70,8 @@ export default function FamiliesPage() {
   return (
     <div className="page">
       <h1>My Families</h1>
+
+      <PendingInvitesBanner />
 
       {error && <div className="error-message">{error}</div>}
       {success && <div className="success-message">{success}</div>}

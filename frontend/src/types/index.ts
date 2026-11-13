@@ -106,6 +106,17 @@ export interface FamilyInviteSummary {
   expires_at: string;
   accepted_at: string | null;
   accepted_by_name: string | null;
+  declined_at: string | null;
+  declined_by_name: string | null;
+}
+
+export interface PendingInvite {
+  id: number;
+  family_id: number;
+  family_name: string;
+  inviter_name: string;
+  created_at: string;
+  expires_at: string;
 }
 
 export interface FamilyMember {

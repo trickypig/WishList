@@ -4,6 +4,42 @@ const INVALID_INVITE_MESSAGE = 'This invite link has expired or is no longer val
 
 function registerInviteRoutes(Router $router, PDO $db): void
 {
+    // GET /my-invites - families inviting the signed-in person by their email address
+    $router->get('/my-invites', function (array $params) use ($db) {
+        $user = authenticate();
+        Response::json(['invites' => FamilyInvite::pendingForUser($db, (int) $user['id'], (string) $user['email'])]);
+    });
+
+    // POST /my-invites/{id}/accept - join from an invite sent to the signed-in person's email, without the link
+    $router->post('/my-invites/{id}/accept', function (array $params) use ($db) {
+        $user = authenticate();
+
+        $invite = FamilyInvite::findPendingForUser($db, (int) $params['id'], (string) $user['email']);
+        if (!$invite) {
+            Response::notFound(INVALID_INVITE_MESSAGE);
+        }
+
+        $alreadyMember = FamilyInvite::accept($db, $invite, (int) $user['id']);
+
+        Response::json([
+            'family'         => Family::getById($db, (int) $invite['family_id']),
+            'already_member' => $alreadyMember,
+        ]);
+    });
+
+    // POST /my-invites/{id}/decline - stop offering that family's current invites to the signed-in person
+    $router->post('/my-invites/{id}/decline', function (array $params) use ($db) {
+        $user = authenticate();
+
+        $invite = FamilyInvite::findPendingForUser($db, (int) $params['id'], (string) $user['email']);
+        if (!$invite) {
+            Response::notFound(INVALID_INVITE_MESSAGE);
+        }
+
+        FamilyInvite::declineForUser($db, (int) $invite['family_id'], (int) $user['id'], (string) $user['email']);
+        Response::json(['message' => 'Invite declined']);
+    });
+
     // GET /invites/{token} - public details for an invite link
     $router->get('/invites/{token}', function (array $params) use ($db) {
         $invite = FamilyInvite::findValid($db, (string) $params['token']);
