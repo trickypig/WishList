@@ -49,5 +49,8 @@ public class WishListModel
     public bool HasItemCount => ItemCount is not null;
 
     [JsonIgnore]
+    public string ItemCountText => ItemCount == 1 ? "1 item" : $"{ItemCount ?? 0} items";
+
+    [JsonIgnore]
     public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
 }

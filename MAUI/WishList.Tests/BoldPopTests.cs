@@ -51,3 +51,15 @@ public class BoldPopTests
         Assert.Equal(173, BoldPop.TileWidth(358, 2, 12));
     }
 }
+
+public class RoleColorTests
+{
+    [Fact]
+    public void Role_colors_follow_the_spec()
+    {
+        Assert.Equal("#ffe14d", BoldPop.RoleHex("admin"));
+        Assert.Equal("#c9a7ff", BoldPop.RoleHex("child"));
+        Assert.Equal("#7cd4ff", BoldPop.RoleHex("member"));
+        Assert.Equal("#7cd4ff", BoldPop.RoleHex(null));
+    }
+}

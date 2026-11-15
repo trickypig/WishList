@@ -208,6 +208,8 @@
                                                                        IsVisible="{Binding Description, Converter={StaticResource IsNotNullOrEmptyConverter}}" />
                                                                 <Label Text="{Binding SuggestedByLabel}" Style="{StaticResource Subtle}" FontSize="12"
                                                                        FontFamily="BodySemibold" IsVisible="{Binding IsSuggestion}" />
+                                                                <Label Text="{Binding OwnerQuantityText}" Style="{StaticResource Subtle}" FontSize="12"
+                                                                       FontFamily="DisplayMedium" IsVisible="{Binding ShowOwnerQuantity}" />
                                                                 <Label Text="{Binding TakenText}" Style="{StaticResource Subtle}" FontSize="12"
                                                                        FontFamily="DisplayMedium" IsVisible="{Binding ShowProgress}" />
                                                                 <Border Style="{StaticResource Pill}" BackgroundColor="{StaticResource Success}"

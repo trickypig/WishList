@@ -51,7 +51,7 @@
                                             </Border>
                                         </HorizontalStackLayout>
                                         <Label Text="{Binding Email}" TextColor="{AppThemeBinding Light={StaticResource SubtleLight}, Dark={StaticResource SubtleDark}}" FontSize="12" />
-                                        <Border Style="{StaticResource Pill}" BackgroundColor="{StaticResource Tile1}" Margin="0,4,0,0">
+                                        <Border Style="{StaticResource Pill}" BackgroundColor="{Binding RoleColorHex, Converter={StaticResource HexToColor}}" Margin="0,4,0,0">
                                             <Label Text="{Binding Role}" FontFamily="DisplayBold" FontSize="10" TextColor="{StaticResource OnColor}" />
                                         </Border>
                                     </VerticalStackLayout>

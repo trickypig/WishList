@@ -130,6 +130,13 @@ public class Item : INotifyPropertyChanged
     [JsonIgnore]
     public bool ShowProgress => ShowPurchaseState && QuantityDesired > 1;
 
+    /// <summary>The owner sees how many they asked for; family members see "N of M taken" instead.</summary>
+    [JsonIgnore]
+    public bool ShowOwnerQuantity => !ShowPurchaseState && QuantityDesired > 1;
+
+    [JsonIgnore]
+    public string OwnerQuantityText => $"Wants {QuantityDesired}";
+
     [JsonIgnore]
     public string TakenText => $"{TotalPurchased ?? 0} of {QuantityDesired} taken";
 

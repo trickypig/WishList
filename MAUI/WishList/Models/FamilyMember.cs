@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using WishList.Helpers;
 
 namespace WishList.Models;
 
@@ -21,4 +22,7 @@ public class FamilyMember
 
     [JsonPropertyName("is_child")]
     public int IsChild { get; set; }
+
+    [JsonIgnore]
+    public string RoleColorHex => BoldPop.RoleHex(Role);
 }

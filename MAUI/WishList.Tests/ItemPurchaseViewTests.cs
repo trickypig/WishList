@@ -79,3 +79,21 @@ public class ItemTileTests
         Assert.Contains(nameof(Item.TileHex), changed);
     }
 }
+
+public class OwnerQuantityTests
+{
+    [Fact]
+    public void Owner_sees_quantity_when_more_than_one()
+    {
+        var item = new Item { QuantityDesired = 3, ShowPurchaseState = false };
+        Assert.True(item.ShowOwnerQuantity);
+        Assert.Equal("Wants 3", item.OwnerQuantityText);
+    }
+
+    [Fact]
+    public void Owner_quantity_hidden_for_single_items_and_for_family()
+    {
+        Assert.False(new Item { QuantityDesired = 1, ShowPurchaseState = false }.ShowOwnerQuantity);
+        Assert.False(new Item { QuantityDesired = 3, ShowPurchaseState = true }.ShowOwnerQuantity);
+    }
+}

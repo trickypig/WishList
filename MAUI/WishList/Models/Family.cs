@@ -31,6 +31,9 @@ public class Family
 
     public string EffectiveRole => Role ?? MyRole ?? "member";
 
+    [JsonIgnore]
+    public string RoleColorHex => BoldPop.RoleHex(EffectiveRole);
+
     /// <summary>Stripe color for the family card, from the shared Bold Pop palette.</summary>
     [JsonIgnore]
     public string ColorHex => BoldPop.TileHexAt(Id);

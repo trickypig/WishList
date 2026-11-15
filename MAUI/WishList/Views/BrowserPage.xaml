@@ -67,8 +67,8 @@
                  Navigated="OnWebViewNavigated" />
 
         <!-- Error bar -->
-        <Label Grid.Row="2" Text="{Binding ErrorMessage}" TextColor="{StaticResource Danger}"
-               IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}"
-               Padding="8" />
+        <Border Style="{StaticResource ErrorBlock}" IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}">
+            <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorText}" />
+        </Border>
     </Grid>
 </ContentPage>

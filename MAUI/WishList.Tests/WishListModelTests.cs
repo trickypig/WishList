@@ -26,3 +26,14 @@ public class WishListModelCountTests
         Assert.False(new WishListModel { ItemCount = null }.HasItemCount);
     }
 }
+
+public class ItemCountTextTests
+{
+    [Fact]
+    public void Item_count_text_is_singular_for_one()
+    {
+        Assert.Equal("1 item", new WishListModel { ItemCount = 1 }.ItemCountText);
+        Assert.Equal("0 items", new WishListModel { ItemCount = 0 }.ItemCountText);
+        Assert.Equal("6 items", new WishListModel { ItemCount = 6 }.ItemCountText);
+    }
+}

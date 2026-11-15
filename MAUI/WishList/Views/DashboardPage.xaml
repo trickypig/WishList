@@ -49,7 +49,7 @@
                                        LineBreakMode="TailTruncation" IsVisible="{Binding HasDescription}" />
                                     <Border Style="{StaticResource Pill}" BackgroundColor="{StaticResource Highlight}"
                                             IsVisible="{Binding HasItemCount}">
-                                        <Label Text="{Binding ItemCount, StringFormat='{0} items'}" FontFamily="DisplayBold"
+                                        <Label Text="{Binding ItemCountText}" FontFamily="DisplayBold"
                                                FontSize="11" TextColor="{StaticResource OnColor}" />
                                     </Border>
                                     <Button Text="Delete" Style="{StaticResource SmallButton}" HorizontalOptions="Start"

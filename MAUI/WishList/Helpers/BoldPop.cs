@@ -23,6 +23,14 @@ public static class BoldPop
         return (list.Count(i => (i.TotalPurchased ?? 0) < i.QuantityDesired), list.Count);
     }
 
+    /// <summary>Role badge color: admin yellow, child lilac, everyone else sky.</summary>
+    public static string RoleHex(string? role) => role?.ToLowerInvariant() switch
+    {
+        "admin" => "#ffe14d",
+        "child" => "#c9a7ff",
+        _ => TileHex[0],
+    };
+
     /// <summary>Tiles sit in a grid: the right half of a tile means "drop after it".</summary>
     public static bool DropAfter(double x, double width) => x > width / 2;
 

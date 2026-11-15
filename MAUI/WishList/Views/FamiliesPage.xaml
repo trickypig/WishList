@@ -42,7 +42,7 @@
                                     <Label Text="{Binding Name}" FontSize="18" FontFamily="DisplayBold" />
                                     <Label Text="{Binding MemberCount, StringFormat='{0} members'}"
                                            TextColor="{AppThemeBinding Light={StaticResource SubtleLight}, Dark={StaticResource SubtleDark}}" FontSize="13" />
-                                    <Border Style="{StaticResource Pill}" BackgroundColor="{StaticResource Highlight}" Margin="0,6,0,0">
+                                    <Border Style="{StaticResource Pill}" BackgroundColor="{Binding RoleColorHex, Converter={StaticResource HexToColor}}" Margin="0,6,0,0">
                                         <Label Text="{Binding EffectiveRole}" FontFamily="DisplayBold" FontSize="10" TextColor="{StaticResource OnColor}" />
                                     </Border>
                                 </VerticalStackLayout>
@@ -59,8 +59,8 @@
             </CollectionView>
         </RefreshView>
 
-        <Label Grid.Row="1" Text="{Binding ErrorMessage}" TextColor="{StaticResource Danger}"
-               IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}"
-               Margin="16,0" />
+        <Border Style="{StaticResource ErrorBlock}" IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}" Margin="16,0">
+            <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorText}" />
+        </Border>
     </Grid>
 </ContentPage>
