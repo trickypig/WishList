@@ -2,7 +2,7 @@
 .family-suggestions {
   margin-top: 2rem;
   padding-top: 1.5rem;
-  border-top: 2px solid var(--color-border);
+  border-top: var(--outline);
 }
 
 .family-suggestions-header {

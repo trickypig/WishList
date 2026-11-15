@@ -8,6 +8,7 @@ import {
 } from '../api/client';
 import type { WishList, Item, ItemGroup } from '../types';
 import ItemCard from '../components/items/ItemCard';
+import { countOpen, dropBeforeId, listColorVar } from '../lib/listDisplay';
 import ItemForm from '../components/items/ItemForm';
 import GroupForm from '../components/items/GroupForm';
 
@@ -302,10 +303,8 @@ function ListDetail() {
     e.preventDefault();
     e.stopPropagation();
     e.dataTransfer.dropEffect = 'move';
-    // Lower half of a card means "drop after it"
-    const rect = e.currentTarget.getBoundingClientRect();
-    const after = e.clientY > rect.top + rect.height / 2;
-    const beforeId = after ? (section[index + 1]?.id ?? null) : section[index].id;
+    // Cards sit in a grid: the right half of a card means "drop after it"
+    const beforeId = dropBeforeId(e.clientX, e.currentTarget.getBoundingClientRect(), section, index);
     if (dropTarget?.group !== group || dropTarget.beforeId !== beforeId) {
       setDropTarget({ group, beforeId });
     }
@@ -392,6 +391,7 @@ function ListDetail() {
               item={item}
               isOwner={isOwner}
               compact={compact}
+              tileIndex={index}
               onEdit={setEditingItem}
               onDelete={handleDeleteItem}
               onMoveUp={(i) => handleMoveItem(i, 'up')}
@@ -501,12 +501,13 @@ function ListDetail() {
   }
 
   const items = list.items || [];
+  const openCount = countOpen(items);
 
   return (
     <div className="list-detail-page">
       {error && <div className="error-message">{error}</div>}
 
-      <div className="list-detail-header">
+      <div className="list-detail-header" style={{ background: listColorVar(list.id) }}>
         {isOwner && editingTitle ? (
           <div className="edit-title-form">
             <input
@@ -534,6 +535,13 @@ function ListDetail() {
               {list.description && <p className="list-description">{list.description}</p>}
               {!isOwner && list.owner_name && (
                 <p className="list-owner">By {list.owner_name}</p>
+              )}
+            </div>
+            <div className="list-counter">
+              {isOwner ? (
+                <><b>{items.length}</b> {items.length === 1 ? 'wish' : 'wishes'}</>
+              ) : (
+                <><b>{openCount.open}</b> of {openCount.total} still open</>
               )}
             </div>
             {isOwner && (
@@ -665,8 +673,8 @@ function ListDetail() {
             {!isOwner && renderAddItemControls()}
             {suggestionsLoading ? <p role="status">Loading suggestions...</p> : (
               <div className="items-list">
-                {(list.suggestions || []).map(item => (
-                  <ItemCard key={item.id} item={item} isOwner={isOwner}
+                {(list.suggestions || []).map((item, index) => (
+                  <ItemCard key={item.id} item={item} isOwner={isOwner} tileIndex={items.length + index}
                     canEdit={item.suggested_by === user?.id}
                     canDelete={isOwner || item.suggested_by === user?.id}
                     onEdit={setEditingItem} onDelete={handleDeleteItem}

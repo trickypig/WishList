@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import type { Item } from '../../types';
 import { tileClass } from '../../lib/listDisplay';
 
@@ -38,13 +39,15 @@ export default function ItemCard({
   const totalPurchased = item.total_purchased || 0;
   const purchasedByMe = item.purchased_by_me || 0;
   const fullyPurchased = totalPurchased >= item.quantity_desired;
+  // Scraped photos sometimes vanish; fall back to the plain tile
+  const [imageFailed, setImageFailed] = useState(false);
 
   return (
     <div className={`item-card ${compact ? 'item-card-compact' : ''} ${fullyPurchased && !isOwner ? 'item-card-purchased' : ''}`}>
       <div className="item-card-main">
         <div className={`item-image ${tileClass(tileIndex)}`}>
-          {item.image_url
-            ? <img src={item.image_url} alt={item.name} />
+          {item.image_url && !imageFailed
+            ? <img src={item.image_url} alt={item.name} onError={() => setImageFailed(true)} />
             : <span className="item-image-placeholder" aria-hidden="true">🎁</span>}
         </div>
         <div className="item-details">
