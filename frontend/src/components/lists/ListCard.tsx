@@ -8,25 +8,31 @@ interface ListCardProps {
 }
 
 export default function ListCard({ list, showOwner }: ListCardProps) {
+  const showOwnerLine = showOwner && !!list.owner_name;
+  const hasBody = !!list.description || showOwnerLine || !!list.items;
   return (
     <Link to={`/lists/${list.id}`} className="list-card pressable">
-      <div className="list-card-band" style={{ background: listColorVar(list.id) }} aria-hidden="true">🎁</div>
-      <div className="list-card-body">
+      <div className={`list-card-band ${hasBody ? '' : 'list-card-band-only'}`} style={{ background: listColorVar(list.id) }}>
         <h3 className="list-card-title">{list.title}</h3>
-        {list.description && (
-          <p className="list-card-desc">{list.description}</p>
-        )}
-        <div className="list-card-meta">
-          {showOwner && list.owner_name && (
-            <span className="list-card-owner">By {list.owner_name}</span>
-          )}
-          {list.items && (
-            <span className="list-card-count">
-              {list.items.length} {list.items.length === 1 ? 'item' : 'items'}
-            </span>
-          )}
-        </div>
+        <span className="list-card-icon" aria-hidden="true">🎁</span>
       </div>
+      {hasBody && (
+        <div className="list-card-body">
+          {list.description && (
+            <p className="list-card-desc">{list.description}</p>
+          )}
+          <div className="list-card-meta">
+            {showOwnerLine && (
+              <span className="list-card-owner">By {list.owner_name}</span>
+            )}
+            {list.items && (
+              <span className="list-card-count">
+                {list.items.length} {list.items.length === 1 ? 'item' : 'items'}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
     </Link>
   );
 }

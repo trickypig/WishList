@@ -453,29 +453,41 @@ img {
 }
 
 .list-card-band {
-  height: 64px;
+  min-height: 64px;
   border-bottom: var(--outline);
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  padding: 0 0.9rem;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.9rem;
+}
+.list-card-band-only {
+  border-bottom: none;
+  flex: 1;
+}
+
+.list-card-icon {
   font-size: 1.6rem;
+  flex-shrink: 0;
 }
 
 .list-card-body {
-  padding: 0.9rem 1rem 1rem;
+  padding: 0.75rem 1rem 0.9rem;
 }
 
 .list-card-title {
-  font-size: 1.15rem;
-  margin-bottom: 0.3rem;
-  color: var(--color-text);
+  font-size: 1.2rem;
+  line-height: 1.15;
+  margin: 0;
+  color: var(--color-ink);
+  overflow-wrap: anywhere;
 }
 
 .list-card-desc {
+  overflow-wrap: anywhere;
   font-size: 0.875rem;
   color: var(--color-text-secondary);
-  margin-bottom: 0.6rem;
+  margin-bottom: 0.4rem;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
