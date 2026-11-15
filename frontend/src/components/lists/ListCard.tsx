@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { WishList } from '../../types';
+import { listColorVar } from '../../lib/listDisplay';
 
 interface ListCardProps {
   list: WishList;
@@ -8,7 +9,8 @@ interface ListCardProps {
 
 export default function ListCard({ list, showOwner }: ListCardProps) {
   return (
-    <Link to={`/lists/${list.id}`} className="list-card">
+    <Link to={`/lists/${list.id}`} className="list-card pressable">
+      <div className="list-card-band" style={{ background: listColorVar(list.id) }} aria-hidden="true">🎁</div>
       <div className="list-card-body">
         <h3 className="list-card-title">{list.title}</h3>
         {list.description && (
