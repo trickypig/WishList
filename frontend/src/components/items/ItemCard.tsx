@@ -1,4 +1,5 @@
 import type { Item } from '../../types';
+import { tileClass } from '../../lib/listDisplay';
 
 interface ItemCardProps {
   item: Item;
@@ -14,6 +15,8 @@ interface ItemCardProps {
   isFirst?: boolean;
   isLast?: boolean;
   compact?: boolean;
+  /** Position in the list; picks the image tile color. */
+  tileIndex?: number;
 }
 
 export default function ItemCard({
@@ -30,6 +33,7 @@ export default function ItemCard({
   isFirst,
   isLast,
   compact,
+  tileIndex = 0,
 }: ItemCardProps) {
   const totalPurchased = item.total_purchased || 0;
   const purchasedByMe = item.purchased_by_me || 0;
@@ -38,11 +42,11 @@ export default function ItemCard({
   return (
     <div className={`item-card ${compact ? 'item-card-compact' : ''} ${fullyPurchased && !isOwner ? 'item-card-purchased' : ''}`}>
       <div className="item-card-main">
-        {item.image_url && (
-          <div className="item-image">
-            <img src={item.image_url} alt={item.name} />
-          </div>
-        )}
+        <div className={`item-image ${tileClass(tileIndex)}`}>
+          {item.image_url
+            ? <img src={item.image_url} alt={item.name} />
+            : <span className="item-image-placeholder" aria-hidden="true">🎁</span>}
+        </div>
         <div className="item-details">
           <div className="item-header">
             <h4 className="item-name">{item.name}</h4>
@@ -83,11 +87,11 @@ export default function ItemCard({
                   />
                 </div>
                 <span className="purchase-text">
-                  {totalPurchased} of {item.quantity_desired} purchased
+                  {totalPurchased} of {item.quantity_desired} taken
                 </span>
               </div>
               {purchasedByMe > 0 && (
-                <span className="purchased-by-me">You purchased {purchasedByMe}</span>
+                <span className="purchased-by-me">You're getting this ✓</span>
               )}
             </div>
           )}
@@ -123,12 +127,15 @@ export default function ItemCard({
           <>
             {!fullyPurchased && purchasedByMe === 0 && (
               <button className="btn btn-sm btn-primary" onClick={() => onPurchase?.(item)}>
-                Mark Purchased
+                I'll get this
               </button>
+            )}
+            {fullyPurchased && purchasedByMe === 0 && (
+              <span className="btn btn-sm btn-claimed">Claimed ✓</span>
             )}
             {purchasedByMe > 0 && (
               <button className="btn btn-sm btn-outline" onClick={() => onUnpurchase?.(item)}>
-                Undo Purchase
+                Undo
               </button>
             )}
           </>

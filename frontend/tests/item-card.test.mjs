@@ -35,14 +35,15 @@ test('suggestion author can edit, delete and undo their purchase', () => {
   const html = render({ isOwner: false, canEdit: true, canDelete: true });
   assert.match(html, />Edit</);
   assert.match(html, />Delete</);
-  assert.match(html, />Undo Purchase</);
-  assert.match(html, /1 of 2 purchased/);
+  assert.match(html, />Undo</);
+  assert.match(html, /You&#x27;re getting this ✓/);
+  assert.match(html, /1 of 2 taken/);
   assert.doesNotMatch(html, /Move up|Move down/);
 });
 
 test('other family members get purchase controls without edit/delete controls', () => {
   const html = render({ item: { ...suggestion, purchased_by_me: 0 }, isOwner: false, canEdit: false, canDelete: false });
-  assert.match(html, />Mark Purchased</);
+  assert.match(html, />I&#x27;ll get this</);
   assert.doesNotMatch(html, />Edit<|>Delete<|Move up|Move down/);
 });
 
@@ -52,4 +53,30 @@ test('official items retain owner edit and reorder controls without attribution'
   assert.match(html, />Delete</);
   assert.match(html, /Move up/);
   assert.doesNotMatch(html, /Suggested by|purchased|Purchase/);
+});
+
+const other = { ...suggestion, suggested_by: null, suggested_by_name: null };
+
+test('fully purchased by others shows Claimed and stripes', () => {
+  const html = render({ item: { ...other, total_purchased: 2, purchased_by_me: 0 }, isOwner: false, canEdit: false, canDelete: false });
+  assert.match(html, /Claimed ✓/);
+  assert.match(html, /item-card-purchased/);
+  assert.doesNotMatch(html, /ll get this/);
+});
+
+test('partly purchased by others is still available', () => {
+  const html = render({ item: { ...other, quantity_desired: 3, total_purchased: 1, purchased_by_me: 0 }, isOwner: false, canEdit: false, canDelete: false });
+  assert.match(html, /ll get this/);
+  assert.match(html, /1 of 3 taken/);
+  assert.doesNotMatch(html, /item-card-purchased|Claimed/);
+});
+
+test('owner never sees purchase state', () => {
+  const html = render({ item: { ...other, total_purchased: 2, purchased_by_me: 0 }, isOwner: true });
+  assert.doesNotMatch(html, /Claimed|taken|item-card-purchased|getting this/);
+});
+
+test('tile class follows tileIndex', () => {
+  const html = render({ item: other, isOwner: false, tileIndex: 6 });
+  assert.match(html, /item-image tile-2/);
 });
