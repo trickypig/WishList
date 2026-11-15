@@ -94,7 +94,22 @@ public class Item : INotifyPropertyChanged
 
     /// <summary>Position in the list; picks the tile color.</summary>
     [JsonIgnore]
-    public int TileIndex { get; set; }
+    public int TileIndex
+    {
+        get => _tileIndex;
+        set
+        {
+            if (_tileIndex == value) return;
+            _tileIndex = value;
+            Raise();
+            Raise(nameof(TileHex));
+        }
+    }
+
+    int _tileIndex;
+
+    [JsonIgnore]
+    public bool HasPrice => Price is > 0;
 
     [JsonIgnore]
     public string TileHex => BoldPop.TileHexAt(TileIndex);
@@ -136,7 +151,10 @@ public class Item : INotifyPropertyChanged
     }
 
     [JsonIgnore]
-    public bool HasImage => !string.IsNullOrWhiteSpace(ImageUrl) && !ImageFailed;
+    public bool HasImage =>
+        !ImageFailed
+        && Uri.TryCreate(ImageUrl, UriKind.Absolute, out var uri)
+        && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
 
     [JsonIgnore]
     public bool ShowPlaceholder => !HasImage;

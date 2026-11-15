@@ -55,5 +55,27 @@ public class ItemPurchaseViewTests
         item.ImageFailed = true;
         Assert.False(item.HasImage);
         Assert.False(new Item { ImageUrl = "" }.HasImage);
+        Assert.False(new Item { ImageUrl = "/giftbox.svg" }.HasImage);
+    }
+}
+
+public class ItemTileTests
+{
+    [Fact]
+    public void HasPrice_only_for_positive_prices()
+    {
+        Assert.True(new Item { Price = 12.5m }.HasPrice);
+        Assert.False(new Item { Price = null }.HasPrice);
+        Assert.False(new Item { Price = 0m }.HasPrice);
+    }
+
+    [Fact]
+    public void Setting_TileIndex_refreshes_TileHex()
+    {
+        var item = new Item();
+        var changed = new List<string?>();
+        item.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+        item.TileIndex = 2;
+        Assert.Contains(nameof(Item.TileHex), changed);
     }
 }

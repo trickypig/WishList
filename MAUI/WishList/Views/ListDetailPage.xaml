@@ -3,241 +3,273 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:WishList.ViewModels"
              xmlns:models="clr-namespace:WishList.Models"
+             xmlns:controls="clr-namespace:WishList.Controls"
+             xmlns:views="clr-namespace:WishList.Views"
              x:Class="WishList.Views.ListDetailPage"
+             x:Name="Page"
              x:DataType="vm:ListDetailViewModel"
              Title="{Binding WishList.Title}">
-
-    <Grid RowDefinitions="Auto,*">
-
-        <VerticalStackLayout Grid.Row="0" Padding="16" Spacing="6"
-                             IsVisible="{Binding IsOwner}">
-            <HorizontalStackLayout Spacing="10">
-                <Button Text="+ Add Item"
-                        Command="{Binding AddItemCommand}"
-                        Style="{StaticResource PrimaryButton}"
-                        HeightRequest="36" Padding="12,0" />
-                <Button Text="+ Add Group"
-                        Command="{Binding AddGroupCommand}"
-                        Style="{StaticResource OutlineButton}"
-                        HeightRequest="36" Padding="12,0" />
-                <Button Text="Edit List"
-                        Command="{Binding EditListCommand}"
-                        Style="{StaticResource OutlineButton}"
-                        HeightRequest="36" Padding="12,0" />
-                <Button Text="Sharing"
-                        Command="{Binding ChangeSharingCommand}"
-                        Style="{StaticResource OutlineButton}"
-                        HeightRequest="36" Padding="12,0" />
-            </HorizontalStackLayout>
-            <Label Text="{Binding VisibilityLabel}" TextColor="Gray" FontSize="12" />
-            <Button Text="{Binding SuggestionsButtonText}"
-                    Command="{Binding ToggleSuggestionsCommand}"
-                    Style="{StaticResource OutlineButton}" HorizontalOptions="Start" />
-            <Label Text="Loading suggestions..." IsVisible="{Binding SuggestionsLoading}" TextColor="Gray" />
-        </VerticalStackLayout>
-
-        <!-- Someone else's list: fully purchased items are hidden unless asked for -->
-        <HorizontalStackLayout Grid.Row="0" Padding="12,8" Spacing="2"
-                               IsVisible="{Binding IsOwner, Converter={StaticResource InvertedBoolConverter}}">
-            <Button Text="+ Suggest Item" Command="{Binding AddSuggestionCommand}"
-                    Style="{StaticResource PrimaryButton}" HeightRequest="36" Padding="12,0" />
-            <CheckBox IsChecked="{Binding ShowPurchased}" VerticalOptions="Center" />
-            <Label Text="Show Purchased" VerticalOptions="Center">
-                <Label.GestureRecognizers>
-                    <TapGestureRecognizer Command="{Binding ToggleShowPurchasedCommand}" />
-                </Label.GestureRecognizers>
-            </Label>
-        </HorizontalStackLayout>
-
-        <RefreshView Grid.Row="1"
+    <Grid RowDefinitions="*,Auto">
+        <RefreshView Grid.Row="0"
                      IsRefreshing="{Binding IsRefreshing}"
                      Command="{Binding LoadListCommand}">
-            <ScrollView>
-                <!-- Ungrouped items first, then one block per group -->
-                <VerticalStackLayout Padding="0,0,0,16" Spacing="12"
-                                     BindableLayout.ItemsSource="{Binding Sections}">
-                    <BindableLayout.EmptyView>
-                        <Label Text="{Binding EmptyMessage}" TextColor="Gray" Margin="16" />
-                    </BindableLayout.EmptyView>
-                    <BindableLayout.ItemTemplate>
-                        <DataTemplate x:DataType="models:ItemSection">
-                            <Border Margin="8,0" Padding="0,0,0,4"
-                                    StrokeThickness="0"
-                                    Stroke="{AppThemeBinding Light={StaticResource Gray100}, Dark={StaticResource Gray600}}"
-                                    BackgroundColor="Transparent">
-                                <Border.StrokeShape>
-                                    <RoundRectangle CornerRadius="14" />
-                                </Border.StrokeShape>
-                                <!-- Groups get a tinted box; the ungrouped section stays plain -->
-                                <Border.Triggers>
-                                    <DataTrigger TargetType="Border" Binding="{Binding IsGroup}" Value="True">
-                                        <Setter Property="StrokeThickness" Value="1" />
-                                        <Setter Property="BackgroundColor" Value="{AppThemeBinding Light=#F3F0F7, Dark=#26222E}" />
-                                    </DataTrigger>
-                                </Border.Triggers>
+            <ScrollView x:Name="Scroller">
+                <VerticalStackLayout x:Name="ContentStack" Padding="16,16,16,24" Spacing="16">
+
+                    <!-- ===== Hero banner in the list's own color ===== -->
+                    <controls:PopCard Offset="5" CornerRadius="16" InnerPadding="18,16"
+                                      Fill="{Binding HeroColorHex, Converter={StaticResource HexToColor}}">
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                            <VerticalStackLayout Grid.Column="0" Spacing="6" VerticalOptions="End">
+                                <Label Text="{Binding WishList.Title}" Style="{StaticResource H1}"
+                                       TextColor="{StaticResource OnColor}" FontSize="30" LineBreakMode="WordWrap" />
+                                <Label Text="{Binding WishList.Description}" TextColor="{StaticResource OnColor}"
+                                       FontFamily="BodySemibold" FontSize="14" LineBreakMode="WordWrap"
+                                       IsVisible="{Binding HasDescription}" />
+                                <Label Text="{Binding WishList.OwnerName, StringFormat='By {0}'}"
+                                       TextColor="{StaticResource OnColor}" FontFamily="DisplayBold" FontSize="13"
+                                       IsVisible="{Binding ShowOwnerName}" />
+                            </VerticalStackLayout>
+                            <!-- Counter: "N of M still open" for family, "M wishes" for the owner -->
+                            <Border Grid.Column="1" VerticalOptions="End" BackgroundColor="{StaticResource Highlight}"
+                                    Stroke="{StaticResource OnColor}" StrokeThickness="2.5"
+                                    StrokeShape="RoundRectangle 12" Padding="12,6">
                                 <VerticalStackLayout Spacing="0">
-
-                                    <!-- Group header: also a drop target that puts an item at the end of the group -->
-                                    <Grid ColumnDefinitions="*,Auto" Padding="12,10,12,4"
-                                          IsVisible="{Binding HasHeading}">
-                                        <Grid.GestureRecognizers>
-                                            <DropGestureRecognizer AllowDrop="True"
-                                                                   DragOver="OnSectionDragOver"
-                                                                   DragLeave="OnSectionDragLeave"
-                                                                   Drop="OnSectionDrop" />
-                                        </Grid.GestureRecognizers>
-                                        <VerticalStackLayout Grid.Column="0" Spacing="2">
-                                            <Label Text="{Binding Title}" FontSize="16" FontAttributes="Bold" />
-                                            <Label Text="{Binding Description}" FontSize="12" TextColor="Gray"
-                                                   IsVisible="{Binding HasDescription}" />
-                                        </VerticalStackLayout>
-                                        <HorizontalStackLayout Grid.Column="1" Spacing="4" VerticalOptions="Start"
-                                                               IsVisible="{Binding IsGroup}">
-                                          <HorizontalStackLayout Spacing="4"
-                                                                 IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=IsOwner}">
-                                            <Button Text="Edit"
-                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=EditGroupCommand}"
-                                                    CommandParameter="{Binding}"
-                                                    Style="{StaticResource OutlineButton}"
-                                                    HeightRequest="28" Padding="8,0" FontSize="11" />
-                                            <Button Text="Del"
-                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=DeleteGroupCommand}"
-                                                    CommandParameter="{Binding}"
-                                                    Style="{StaticResource OutlineButton}"
-                                                    HeightRequest="28" Padding="8,0" FontSize="11" />
-                                          </HorizontalStackLayout>
-                                        </HorizontalStackLayout>
-                                    </Grid>
-
-                                    <!-- Empty section placeholder, owner only, also a drop target -->
-                                    <Border Margin="16,4" Padding="12" StrokeDashArray="4,3"
-                                            Stroke="{StaticResource Gray300}" BackgroundColor="Transparent"
-                                            IsVisible="{Binding ShowEmptyHint}">
-                                        <Border.StrokeShape>
-                                            <RoundRectangle CornerRadius="10" />
-                                        </Border.StrokeShape>
-                                        <Border.GestureRecognizers>
-                                            <DropGestureRecognizer AllowDrop="True"
-                                                                   DragOver="OnSectionDragOver"
-                                                                   DragLeave="OnSectionDragLeave"
-                                                                   Drop="OnSectionDrop" />
-                                        </Border.GestureRecognizers>
-                                        <Label Text="{Binding EmptyHint}" TextColor="Gray" FontSize="12"
-                                               HorizontalTextAlignment="Center" />
-                                    </Border>
-
-                                    <VerticalStackLayout BindableLayout.ItemsSource="{Binding Items}">
-                                        <BindableLayout.ItemTemplate>
-                                            <DataTemplate x:DataType="models:Item">
-                                                <Frame Style="{StaticResource CardFrame}"
-                                                       Margin="{Binding IsInGroup, Converter={StaticResource CompactSize}, ConverterParameter='8,4|8,3'}"
-                                                       Padding="{Binding IsInGroup, Converter={StaticResource CompactSize}, ConverterParameter='16|10'}">
-                                                    <Frame.GestureRecognizers>
-                                                        <DragGestureRecognizer CanDrag="{Binding CanReorder}"
-                                                                               DragStarting="OnItemDragStarting" />
-                                                        <DropGestureRecognizer AllowDrop="True"
-                                                                               DragOver="OnItemDragOver"
-                                                                               DragLeave="OnItemDragLeave"
-                                                                               Drop="OnItemDrop" />
-                                                    </Frame.GestureRecognizers>
-                                                    <Grid ColumnDefinitions="Auto,*,Auto" RowDefinitions="Auto,Auto,Auto,Auto" ColumnSpacing="10">
-
-                                                        <!-- Image -->
-                                                        <Image Grid.Row="0" Grid.Column="0" Grid.RowSpan="4"
-                                                               Source="{Binding ImageUrl}"
-                                                               WidthRequest="{Binding IsInGroup, Converter={StaticResource CompactSize}, ConverterParameter='70|46'}"
-                                                               HeightRequest="{Binding IsInGroup, Converter={StaticResource CompactSize}, ConverterParameter='70|46'}"
-                                                               Aspect="AspectFill" />
-
-                                                        <!-- Name + description -->
-                                                        <Label Grid.Row="0" Grid.Column="1"
-                                                               Text="{Binding Name}"
-                                                               FontSize="{Binding IsInGroup, Converter={StaticResource CompactSize}, ConverterParameter='16|14'}"
-                                                               FontAttributes="Bold" />
-                                                        <Label Grid.Row="1" Grid.Column="1"
-                                                               Text="{Binding Description}"
-                                                               TextColor="Gray"
-                                                               FontSize="{Binding IsInGroup, Converter={StaticResource CompactSize}, ConverterParameter='13|11'}"
-                                                               LineBreakMode="TailTruncation" />
-                                                        <HorizontalStackLayout Grid.Row="2" Grid.Column="1" Spacing="8">
-                                                            <Label Text="{Binding Price, Converter={StaticResource PriceConverter}}"
-                                                                   FontSize="{Binding IsInGroup, Converter={StaticResource CompactSize}, ConverterParameter='14|12'}"
-                                                                   TextColor="{StaticResource Primary}"
-                                                                   IsVisible="{Binding Price, Converter={StaticResource IsNotNullOrEmptyConverter}}" />
-                                                            <Label Text="{Binding QuantityDesired, StringFormat='Qty: {0}'}"
-                                                                   FontSize="{Binding IsInGroup, Converter={StaticResource CompactSize}, ConverterParameter='12|11'}"
-                                                                   TextColor="Gray" />
-                                                            <Label Text="{Binding TotalPurchased, StringFormat='({0} purchased)'}"
-                                                                   FontSize="{Binding IsInGroup, Converter={StaticResource CompactSize}, ConverterParameter='12|11'}"
-                                                                   TextColor="Green"
-                                                                   IsVisible="{Binding HasPurchases}" />
-                                                        </HorizontalStackLayout>
-                                                        <Label Grid.Row="3" Grid.Column="1" Text="{Binding SuggestedByLabel}"
-                                                               FontSize="12" TextColor="Gray" IsVisible="{Binding IsSuggestion}" />
-
-                                                        <!-- Actions -->
-                                                        <VerticalStackLayout Grid.Row="0" Grid.Column="2" Grid.RowSpan="4"
-                                                                             VerticalOptions="Center" Spacing="4">
-                                                            <!-- Owner actions -->
-                                                            <HorizontalStackLayout Spacing="4">
-                                                                <Button Text="Edit"
-                                                                        IsVisible="{Binding CanEdit}"
-                                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=EditItemCommand}"
-                                                                        CommandParameter="{Binding}"
-                                                                        Style="{StaticResource OutlineButton}"
-                                                                        HeightRequest="30" Padding="8,0" FontSize="11" />
-                                                                <Button Text="Del"
-                                                                        IsVisible="{Binding CanDelete}"
-                                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=DeleteItemCommand}"
-                                                                        CommandParameter="{Binding}"
-                                                                        BackgroundColor="#E53935" TextColor="White"
-                                                                        HeightRequest="30" Padding="8,0" FontSize="11" />
-                                                            </HorizontalStackLayout>
-                                                            <HorizontalStackLayout Spacing="2"
-                                                                                   IsVisible="{Binding CanReorder}">
-                                                                <Button Text="Up"
-                                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=MoveItemUpCommand}"
-                                                                        CommandParameter="{Binding}"
-                                                                        HeightRequest="28" Padding="6,0" FontSize="10" />
-                                                                <Button Text="Dn"
-                                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=MoveItemDownCommand}"
-                                                                        CommandParameter="{Binding}"
-                                                                        HeightRequest="28" Padding="6,0" FontSize="10" />
-                                                            </HorizontalStackLayout>
-
-                                                            <!-- Non-owner purchase actions, only while some are still wanted -->
-                                                            <ContentView IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=IsOwner, Converter={StaticResource InvertedBoolConverter}}">
-                                                                <Button Text="Buy"
-                                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=PurchaseItemCommand}"
-                                                                        CommandParameter="{Binding}"
-                                                                        IsVisible="{Binding CanPurchase}"
-                                                                        Style="{StaticResource PrimaryButton}"
-                                                                        HeightRequest="30" Padding="8,0" FontSize="11" />
-                                                            </ContentView>
-                                                            <ContentView IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=IsOwner, Converter={StaticResource InvertedBoolConverter}}">
-                                                                <Button Text="Undo Purchase"
-                                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=UnpurchaseItemCommand}"
-                                                                        CommandParameter="{Binding}"
-                                                                        IsVisible="{Binding HasMyPurchase}"
-                                                                        Style="{StaticResource OutlineButton}"
-                                                                        HeightRequest="30" Padding="8,0" FontSize="11" />
-                                                            </ContentView>
-                                                        </VerticalStackLayout>
-                                                    </Grid>
-                                                </Frame>
-                                            </DataTemplate>
-                                        </BindableLayout.ItemTemplate>
-                                    </VerticalStackLayout>
+                                    <Label Text="{Binding CounterNumber}" FontFamily="DisplayBold" FontSize="24"
+                                           TextColor="{StaticResource OnColor}" HorizontalTextAlignment="Center" />
+                                    <Label Text="{Binding CounterLabel}" FontFamily="DisplayBold" FontSize="11"
+                                           TextColor="{StaticResource OnColor}" HorizontalTextAlignment="Center" />
                                 </VerticalStackLayout>
                             </Border>
-                        </DataTemplate>
-                    </BindableLayout.ItemTemplate>
+                        </Grid>
+                    </controls:PopCard>
+
+                    <!-- ===== Owner toolbar ===== -->
+                    <VerticalStackLayout Spacing="8" IsVisible="{Binding IsOwner}">
+                        <FlexLayout Wrap="Wrap" JustifyContent="Start">
+                            <Button Text="+ Add Item" Command="{Binding AddItemCommand}"
+                                    Style="{StaticResource PrimaryButton}" HeightRequest="40" Padding="14,0" Margin="0,0,8,8" />
+                            <Button Text="+ Add Group" Command="{Binding AddGroupCommand}"
+                                    Style="{StaticResource OutlineButton}" HeightRequest="40" Padding="14,0" Margin="0,0,8,8" />
+                            <Button Text="Edit List" Command="{Binding EditListCommand}"
+                                    Style="{StaticResource OutlineButton}" HeightRequest="40" Padding="14,0" Margin="0,0,8,8" />
+                            <Button Text="Sharing" Command="{Binding ChangeSharingCommand}"
+                                    Style="{StaticResource OutlineButton}" HeightRequest="40" Padding="14,0" Margin="0,0,8,8" />
+                            <Button Text="{Binding SuggestionsButtonText}" Command="{Binding ToggleSuggestionsCommand}"
+                                    Style="{StaticResource OutlineButton}" HeightRequest="40" Padding="14,0" Margin="0,0,8,8" />
+                        </FlexLayout>
+                        <Label Text="{Binding VisibilityLabel}" Style="{StaticResource Subtle}" FontSize="12" />
+                        <Label Text="Loading suggestions..." IsVisible="{Binding SuggestionsLoading}" Style="{StaticResource Subtle}" />
+                    </VerticalStackLayout>
+
+                    <!-- ===== Family member toolbar: fully bought items hidden unless asked for ===== -->
+                    <FlexLayout Wrap="Wrap" AlignItems="Center"
+                                IsVisible="{Binding IsOwner, Converter={StaticResource InvertedBoolConverter}}">
+                        <Button Text="+ Suggest Item" Command="{Binding AddSuggestionCommand}"
+                                Style="{StaticResource PrimaryButton}" HeightRequest="40" Padding="14,0" Margin="0,0,12,0" />
+                        <HorizontalStackLayout Spacing="0">
+                            <CheckBox IsChecked="{Binding ShowPurchased}" VerticalOptions="Center" />
+                            <Label Text="Show Purchased" VerticalOptions="Center" FontFamily="DisplayBold">
+                                <Label.GestureRecognizers>
+                                    <TapGestureRecognizer Command="{Binding ToggleShowPurchasedCommand}" />
+                                </Label.GestureRecognizers>
+                            </Label>
+                        </HorizontalStackLayout>
+                    </FlexLayout>
+
+                    <!-- ===== Sections: ungrouped items, then each group, then suggestions ===== -->
+                    <VerticalStackLayout Spacing="18" BindableLayout.ItemsSource="{Binding Sections}">
+                        <BindableLayout.EmptyView>
+                            <Border Style="{StaticResource EmptyBlock}">
+                                <VerticalStackLayout Spacing="6">
+                                    <Label Text="🎁" FontSize="36" HorizontalTextAlignment="Center" />
+                                    <Label Text="{Binding EmptyMessage}" Style="{StaticResource Subtle}" HorizontalTextAlignment="Center" />
+                                </VerticalStackLayout>
+                            </Border>
+                        </BindableLayout.EmptyView>
+                        <BindableLayout.ItemTemplate>
+                            <DataTemplate x:DataType="models:ItemSection">
+                                <!-- Groups get an outlined panel; the ungrouped section stays plain -->
+                                <Border Padding="0" StrokeThickness="0" BackgroundColor="Transparent"
+                                        StrokeShape="RoundRectangle 16">
+                                    <Border.Triggers>
+                                        <DataTrigger TargetType="Border" Binding="{Binding IsGroup}" Value="True">
+                                            <Setter Property="StrokeThickness" Value="2.5" />
+                                            <Setter Property="Padding" Value="12,10,12,4" />
+                                            <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}" />
+                                        </DataTrigger>
+                                    </Border.Triggers>
+                                    <VerticalStackLayout Spacing="10">
+                                        <!-- Header: also a drop target that puts an item at the end of the group -->
+                                        <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding HasHeading}" Padding="0,0,0,8">
+                                            <Grid.GestureRecognizers>
+                                                <DropGestureRecognizer AllowDrop="True"
+                                                                       DragOver="OnSectionDragOver"
+                                                                       DragLeave="OnSectionDragLeave"
+                                                                       Drop="OnSectionDrop" />
+                                            </Grid.GestureRecognizers>
+                                            <VerticalStackLayout Grid.Column="0" Spacing="2">
+                                                <Label Text="{Binding Title}" Style="{StaticResource H2}" />
+                                                <Label Text="{Binding Description}" Style="{StaticResource Subtle}"
+                                                       IsVisible="{Binding HasDescription}" />
+                                            </VerticalStackLayout>
+                                            <HorizontalStackLayout Grid.Column="1" Spacing="6" VerticalOptions="Start"
+                                                                   IsVisible="{Binding IsGroup}">
+                                                <HorizontalStackLayout Spacing="6"
+                                                                       IsVisible="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=IsOwner}">
+                                                    <Button Text="Edit" Style="{StaticResource SmallButton}"
+                                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=EditGroupCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                    <Button Text="Delete" Style="{StaticResource SmallButton}"
+                                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=DeleteGroupCommand}"
+                                                            CommandParameter="{Binding}" />
+                                                </HorizontalStackLayout>
+                                            </HorizontalStackLayout>
+                                            <Line Grid.Row="0" Grid.ColumnSpan="2" VerticalOptions="End"
+                                                  Style="{StaticResource DashedDivider}" Margin="0,0,0,-8" />
+                                        </Grid>
+
+                                        <!-- Empty section placeholder (owner only), also a drop target -->
+                                        <Border Style="{StaticResource EmptyBlock}" Padding="12"
+                                                IsVisible="{Binding ShowEmptyHint}">
+                                            <Border.GestureRecognizers>
+                                                <DropGestureRecognizer AllowDrop="True"
+                                                                       DragOver="OnSectionDragOver"
+                                                                       DragLeave="OnSectionDragLeave"
+                                                                       Drop="OnSectionDrop" />
+                                            </Border.GestureRecognizers>
+                                            <Label Text="{Binding EmptyHint}" Style="{StaticResource Subtle}" FontFamily="DisplayMedium"
+                                                   HorizontalTextAlignment="Center" />
+                                        </Border>
+
+                                        <!-- Tile grid: slot widths are set from this grid's own width so whole columns fill the row -->
+                                        <FlexLayout Wrap="Wrap" JustifyContent="Start" AlignItems="Start"
+                                                    SizeChanged="OnTileGridSizeChanged"
+                                                    ChildAdded="OnTileGridChildAdded"
+                                                    BindableLayout.ItemsSource="{Binding Items}">
+                                            <BindableLayout.ItemTemplate>
+                                                <DataTemplate x:DataType="models:Item">
+                                                  <!-- Slot = tile + gap; the gap is padding so FlexLayout can't double it -->
+                                                  <ContentView Padding="0,0,12,12" WidthRequest="200">
+                                                    <controls:PopCard InnerPadding="0">
+                                                        <controls:PopCard.GestureRecognizers>
+                                                            <DragGestureRecognizer CanDrag="{Binding CanReorder}"
+                                                                                   DragStarting="OnItemDragStarting" />
+                                                            <DropGestureRecognizer AllowDrop="True"
+                                                                                   DragOver="OnItemDragOver"
+                                                                                   DragLeave="OnItemDragLeave"
+                                                                                   Drop="OnItemDrop" />
+                                                        </controls:PopCard.GestureRecognizers>
+                                                        <Grid RowDefinitions="Auto,Auto,*">
+                                                            <!-- Image on a colored tile; striped-gray once fully bought -->
+                                                            <Grid Grid.Row="0" HeightRequest="130"
+                                                                  BackgroundColor="{Binding TileHex, Converter={StaticResource HexToColor}}">
+                                                                <Grid.Triggers>
+                                                                    <DataTrigger TargetType="Grid" Binding="{Binding IsInGroup}" Value="True">
+                                                                        <Setter Property="HeightRequest" Value="100" />
+                                                                    </DataTrigger>
+                                                                    <DataTrigger TargetType="Grid" Binding="{Binding ShowStripes}" Value="True">
+                                                                        <Setter Property="BackgroundColor" Value="#d9d9d9" />
+                                                                        <Setter Property="Opacity" Value="0.85" />
+                                                                    </DataTrigger>
+                                                                </Grid.Triggers>
+                                                                <Image Source="{Binding ImageUrl}" Aspect="AspectFit" Margin="10"
+                                                                       IsVisible="{Binding HasImage}"
+                                                                       PropertyChanged="OnTileImagePropertyChanged">
+                                                                    <Image.Triggers>
+                                                                        <DataTrigger TargetType="Image" Binding="{Binding ShowStripes}" Value="True">
+                                                                            <Setter Property="Opacity" Value="0.4" />
+                                                                        </DataTrigger>
+                                                                    </Image.Triggers>
+                                                                </Image>
+                                                                <Label Text="🎁" FontSize="38" HorizontalOptions="Center" VerticalOptions="Center"
+                                                                       IsVisible="{Binding ShowPlaceholder}">
+                                                                    <Label.Triggers>
+                                                                        <DataTrigger TargetType="Label" Binding="{Binding ShowStripes}" Value="True">
+                                                                            <Setter Property="Opacity" Value="0.4" />
+                                                                        </DataTrigger>
+                                                                    </Label.Triggers>
+                                                                </Label>
+                                                            </Grid>
+                                                            <BoxView Grid.Row="1" HeightRequest="2.5" />
+
+                                                            <VerticalStackLayout Grid.Row="2" Padding="10,10,10,12" Spacing="6">
+                                                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                                                                    <Label Grid.Column="0" Text="{Binding Name}" FontFamily="DisplayBold" FontSize="15"
+                                                                           MaxLines="2" LineBreakMode="TailTruncation" />
+                                                                    <Border Grid.Column="1" Style="{StaticResource PriceTag}"
+                                                                            IsVisible="{Binding HasPrice}">
+                                                                        <Label Text="{Binding Price, Converter={StaticResource PriceConverter}}"
+                                                                               FontFamily="DisplayBold" FontSize="12" TextColor="{StaticResource OnColor}" />
+                                                                    </Border>
+                                                                </Grid>
+                                                                <Label Text="{Binding Description}" Style="{StaticResource Subtle}" FontSize="12"
+                                                                       MaxLines="2" LineBreakMode="TailTruncation"
+                                                                       IsVisible="{Binding Description, Converter={StaticResource IsNotNullOrEmptyConverter}}" />
+                                                                <Label Text="{Binding SuggestedByLabel}" Style="{StaticResource Subtle}" FontSize="12"
+                                                                       FontFamily="BodySemibold" IsVisible="{Binding IsSuggestion}" />
+                                                                <Label Text="{Binding TakenText}" Style="{StaticResource Subtle}" FontSize="12"
+                                                                       FontFamily="DisplayMedium" IsVisible="{Binding ShowProgress}" />
+                                                                <Border Style="{StaticResource Pill}" BackgroundColor="{StaticResource Success}"
+                                                                        IsVisible="{Binding ShowMyBadge}">
+                                                                    <Label Text="You're getting this ✓" FontFamily="DisplayBold" FontSize="12"
+                                                                           TextColor="{StaticResource OnColor}" />
+                                                                </Border>
+
+                                                                <!-- Family member actions -->
+                                                                <Button Text="I'll get this" Style="{StaticResource PrimaryButton}" HeightRequest="38" FontSize="13"
+                                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=PurchaseItemCommand}"
+                                                                        CommandParameter="{Binding}"
+                                                                        IsVisible="{Binding CanPurchase}" />
+                                                                <Button Text="Undo" Style="{StaticResource SmallButton}" HorizontalOptions="Start"
+                                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=UnpurchaseItemCommand}"
+                                                                        CommandParameter="{Binding}"
+                                                                        IsVisible="{Binding ShowMyBadge}" />
+                                                                <Border StrokeThickness="2" StrokeDashArray="3,2" StrokeShape="RoundRectangle 9"
+                                                                        Padding="8,7" IsVisible="{Binding IsClaimedByOthers}">
+                                                                    <Label Text="Claimed ✓" FontFamily="DisplayBold" FontSize="13"
+                                                                           HorizontalTextAlignment="Center" />
+                                                                </Border>
+
+                                                                <!-- Owner / suggestion-author actions -->
+                                                                <FlexLayout Wrap="Wrap" AlignItems="Center">
+                                                                    <Button Text="▲" Style="{StaticResource SmallButton}" Margin="0,0,4,4"
+                                                                            IsVisible="{Binding CanReorder}"
+                                                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=MoveItemUpCommand}"
+                                                                            CommandParameter="{Binding}" />
+                                                                    <Button Text="▼" Style="{StaticResource SmallButton}" Margin="0,0,8,4"
+                                                                            IsVisible="{Binding CanReorder}"
+                                                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=MoveItemDownCommand}"
+                                                                            CommandParameter="{Binding}" />
+                                                                    <Button Text="Edit" Style="{StaticResource SmallButton}" Margin="0,0,4,4"
+                                                                            IsVisible="{Binding CanEdit}"
+                                                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=EditItemCommand}"
+                                                                            CommandParameter="{Binding}" />
+                                                                    <Button Text="Delete" Style="{StaticResource SmallButton}" Margin="0,0,4,4"
+                                                                            BackgroundColor="{StaticResource Danger}" TextColor="{StaticResource OnColor}"
+                                                                            IsVisible="{Binding CanDelete}"
+                                                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=DeleteItemCommand}"
+                                                                            CommandParameter="{Binding}" />
+                                                                </FlexLayout>
+                                                            </VerticalStackLayout>
+                                                        </Grid>
+                                                    </controls:PopCard>
+                                                  </ContentView>
+                                                </DataTemplate>
+                                            </BindableLayout.ItemTemplate>
+                                        </FlexLayout>
+                                    </VerticalStackLayout>
+                                </Border>
+                            </DataTemplate>
+                        </BindableLayout.ItemTemplate>
+                    </VerticalStackLayout>
                 </VerticalStackLayout>
             </ScrollView>
         </RefreshView>
 
-        <Label Grid.Row="1" Text="{Binding ErrorMessage}" TextColor="Red"
-               IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}"
-               Margin="16,0" />
+        <Border Grid.Row="1" Style="{StaticResource ErrorBlock}" Margin="16,0,16,12"
+                IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}">
+            <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorText}" />
+        </Border>
     </Grid>
 </ContentPage>

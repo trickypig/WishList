@@ -26,6 +26,21 @@ public partial class App : Application
 
         shell.Loaded += async (s, e) =>
         {
+#if DEBUG
+            // Dev aid for checking screens against a local sandbox API:
+            // WISH_DEV_EMAIL / WISH_DEV_PASSWORD sign in, WISH_DEV_ROUTE opens a page.
+            var devEmail = Environment.GetEnvironmentVariable("WISH_DEV_EMAIL");
+            var devPassword = Environment.GetEnvironmentVariable("WISH_DEV_PASSWORD");
+            if (!string.IsNullOrEmpty(devEmail) && !string.IsNullOrEmpty(devPassword))
+            {
+                await _authService.LoginAsync(devEmail, devPassword);
+                await shell.GoToAsync("//main/dashboard");
+                var devRoute = Environment.GetEnvironmentVariable("WISH_DEV_ROUTE");
+                if (!string.IsNullOrEmpty(devRoute))
+                    await shell.GoToAsync(devRoute);
+                return;
+            }
+#endif
             var restored = await _authService.TryRestoreSessionAsync();
             if (restored)
             {
