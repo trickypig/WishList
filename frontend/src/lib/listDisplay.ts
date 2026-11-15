@@ -1,4 +1,4 @@
-import type { Item } from '../types';
+import type { Item, WishList } from '../types';
 
 export const TILE_COUNT = 5;
 
@@ -32,4 +32,11 @@ export function dropBeforeId(
 /** Show a photo unless this exact URL already failed to load; a corrected URL gets a fresh try. */
 export function shouldShowImage(imageUrl: string | null | undefined, failedUrl: string | null): boolean {
   return !!imageUrl && imageUrl !== failedUrl;
+}
+
+/** "3 items" for a list card: from the loaded items, else the count the list summary carries; null if unknown. */
+export function itemCountLabel(list: Pick<WishList, 'items' | 'item_count'>): string | null {
+  const count = list.items ? list.items.length : list.item_count;
+  if (count == null) return null;
+  return `${count} ${Number(count) === 1 ? 'item' : 'items'}`;
 }

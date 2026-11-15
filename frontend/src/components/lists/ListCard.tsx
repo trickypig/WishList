@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import type { WishList } from '../../types';
-import { listColorVar } from '../../lib/listDisplay';
+import { itemCountLabel, listColorVar } from '../../lib/listDisplay';
 
 interface ListCardProps {
   list: WishList;
@@ -9,7 +9,8 @@ interface ListCardProps {
 
 export default function ListCard({ list, showOwner }: ListCardProps) {
   const showOwnerLine = showOwner && !!list.owner_name;
-  const hasBody = !!list.description || showOwnerLine || !!list.items;
+  const countLabel = itemCountLabel(list);
+  const hasBody = !!list.description || showOwnerLine || !!countLabel;
   return (
     <Link to={`/lists/${list.id}`} className="list-card pressable">
       <div className={`list-card-band ${hasBody ? '' : 'list-card-band-only'}`} style={{ background: listColorVar(list.id) }}>
@@ -25,11 +26,7 @@ export default function ListCard({ list, showOwner }: ListCardProps) {
             {showOwnerLine && (
               <span className="list-card-owner">By {list.owner_name}</span>
             )}
-            {list.items && (
-              <span className="list-card-count">
-                {list.items.length} {list.items.length === 1 ? 'item' : 'items'}
-              </span>
-            )}
+            {countLabel && <span className="list-card-count">{countLabel}</span>}
           </div>
         </div>
       )}

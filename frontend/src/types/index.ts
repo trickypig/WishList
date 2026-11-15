@@ -48,6 +48,8 @@ export interface WishList {
   suggestions?: Item[];
   groups?: ItemGroup[];
   family_ids?: number[];
+  /** Sent on list summaries (your lists, a family's lists) in place of the items. */
+  item_count?: number;
 }
 
 export interface ItemGroup {

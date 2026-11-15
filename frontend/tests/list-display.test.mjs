@@ -10,7 +10,7 @@ const result = await build({
 });
 const compiled = { exports: {} };
 new Function('require', 'module', 'exports', result.outputFiles[0].text)(createRequire(import.meta.url), compiled, compiled.exports);
-const { listColorVar, tileClass, countOpen, dropBeforeId, shouldShowImage } = compiled.exports;
+const { listColorVar, tileClass, countOpen, dropBeforeId, shouldShowImage, itemCountLabel } = compiled.exports;
 
 test('list color is stable per list id and wraps the five-color palette', () => {
   assert.equal(listColorVar(0), 'var(--tile-1)');
@@ -44,4 +44,11 @@ test('shouldShowImage hides only the URL that failed, so a corrected URL shows a
   assert.equal(shouldShowImage('https://a/x.jpg', null), true);
   assert.equal(shouldShowImage('https://a/x.jpg', 'https://a/x.jpg'), false);
   assert.equal(shouldShowImage('https://a/fixed.jpg', 'https://a/x.jpg'), true);
+});
+
+test('item count label uses loaded items, else the summary count', () => {
+  assert.equal(itemCountLabel({ items: [{}, {}] }), '2 items');
+  assert.equal(itemCountLabel({ item_count: 1 }), '1 item');
+  assert.equal(itemCountLabel({ item_count: 0 }), '0 items');
+  assert.equal(itemCountLabel({}), null);
 });

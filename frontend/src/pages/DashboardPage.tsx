@@ -1,6 +1,6 @@
 import { useState, useEffect, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
-import { getLists, createList, getFamilies } from '../api/client';
+import { getLists, createList, getFamilies, getFamilyLists } from '../api/client';
 import type { WishList, Family } from '../types';
 import ListCard from '../components/lists/ListCard';
 import PendingInvitesBanner from '../components/families/PendingInvitesBanner';
@@ -8,6 +8,9 @@ import PendingInvitesBanner from '../components/families/PendingInvitesBanner';
 export default function DashboardPage() {
   const [lists, setLists] = useState<WishList[]>([]);
   const [families, setFamilies] = useState<Family[]>([]);
+  // Lists each family's members share, by family id; a family is missing until its lists arrive
+  const [familyLists, setFamilyLists] = useState<Record<number, WishList[]>>({});
+  const [familyErrors, setFamilyErrors] = useState<Record<number, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [title, setTitle] = useState('');
@@ -20,6 +23,12 @@ export default function DashboardPage() {
       .then(([listsRes, familiesRes]) => {
         setLists(listsRes.lists);
         setFamilies(familiesRes.families);
+        // Your own lists show straight away; each family's section fills in as its lists load
+        for (const family of familiesRes.families) {
+          getFamilyLists(family.id)
+            .then((res) => setFamilyLists((prev) => ({ ...prev, [family.id]: res.lists })))
+            .catch(() => setFamilyErrors((prev) => ({ ...prev, [family.id]: true })));
+        }
       })
       .catch(() => setError('Failed to load data'))
       .finally(() => setLoading(false));
@@ -109,6 +118,38 @@ export default function DashboardPage() {
             ))}
           </div>
         )}
+
+        {families.map((family) => {
+          const shared = familyLists[family.id];
+          return (
+            <section key={family.id} className="family-lists-section">
+              <div className="section-header">
+                <div>
+                  <h2>{family.name}</h2>
+                  <p className="text-muted">Lists shared with this family</p>
+                </div>
+                <Link to={`/families/${family.id}`} className="btn btn-sm btn-ghost">
+                  Manage Family
+                </Link>
+              </div>
+              {familyErrors[family.id] ? (
+                <div className="error-message">Couldn't load this family's lists.</div>
+              ) : !shared ? (
+                <p className="text-muted">Loading lists...</p>
+              ) : shared.length === 0 ? (
+                <div className="empty-state">
+                  <p>Nobody in this family has shared a list yet.</p>
+                </div>
+              ) : (
+                <div className="list-grid">
+                  {shared.map((list) => (
+                    <ListCard key={list.id} list={list} showOwner />
+                  ))}
+                </div>
+              )}
+            </section>
+          );
+        })}
       </main>
 
       <aside className="dashboard-sidebar">

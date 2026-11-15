@@ -515,6 +515,16 @@ img {
 }
 
 /* ===== Dashboard ===== */
+.family-lists-section {
+  margin-top: 2.5rem;
+}
+.family-lists-section h2 {
+  margin: 0;
+}
+.family-lists-section .text-muted {
+  margin: 0.15rem 0 0;
+}
+
 .dashboard-layout {
   display: grid;
   grid-template-columns: 1fr 280px;

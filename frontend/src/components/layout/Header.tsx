@@ -14,7 +14,7 @@ export default function Header() {
         <nav className="header-nav">
           {isAuthenticated ? (
             <>
-              <NavLink to="/dashboard" className="nav-link">My Lists</NavLink>
+              <NavLink to="/dashboard" className="nav-link">Lists</NavLink>
               <NavLink to="/families" className="nav-link">Families</NavLink>
               {user?.is_admin === 1 && (
                 <NavLink to="/admin" className="nav-link nav-link-admin">Admin</NavLink>
