@@ -1,3 +1,4 @@
+using WishList.Helpers;
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -100,6 +101,7 @@ public partial class ListDetailViewModel : ObservableObject
             item.CanDelete = IsOwner || (item.IsSuggestion && item.SuggestedBy == userId);
             item.CanReorder = IsOwner && !item.IsSuggestion;
             item.CanPurchase = !IsOwner && !item.IsFullyPurchased && !item.HasMyPurchase;
+            item.ShowPurchaseState = !IsOwner;
         }
         var visible = _allItems.Where(i => IsOwner || ShowPurchased || !i.IsFullyPurchased).ToList();
 
@@ -121,8 +123,32 @@ public partial class ListDetailViewModel : ObservableObject
             Sections.Add(new ItemSection(null, suggestions, true, isSuggestions: true));
         }
 
+        // Tile colors rotate across everything shown, in display order (like the website)
+        var tile = 0;
+        foreach (var section in Sections)
+            foreach (var item in section.Items)
+                item.TileIndex = tile++;
+
         OnPropertyChanged(nameof(EmptyMessage));
+        OnPropertyChanged(nameof(CounterNumber));
+        OnPropertyChanged(nameof(CounterLabel));
     }
+
+    /// <summary>The list's own color, the same one the website uses for it.</summary>
+    public string HeroColorHex => WishList is null ? BoldPop.TileHex[0] : BoldPop.ListColorHex(WishList.Id);
+
+    /// <summary>Big number in the hero counter: items still open (family) or total wishes (owner).</summary>
+    public string CounterNumber => IsOwner
+        ? _allItems.Count.ToString()
+        : BoldPop.CountOpen(_allItems).Open.ToString();
+
+    public string CounterLabel => IsOwner
+        ? (_allItems.Count == 1 ? "wish" : "wishes")
+        : $"of {_allItems.Count} still open";
+
+    public bool HasDescription => !string.IsNullOrWhiteSpace(WishList?.Description);
+
+    public bool ShowOwnerName => !IsOwner && !string.IsNullOrWhiteSpace(WishList?.OwnerName);
 
     [ObservableProperty]
     private string _errorMessage = string.Empty;
@@ -293,6 +319,9 @@ public partial class ListDetailViewModel : ObservableObject
     partial void OnWishListChanged(WishListModel? value)
     {
         OnPropertyChanged(nameof(VisibilityLabel));
+        OnPropertyChanged(nameof(HeroColorHex));
+        OnPropertyChanged(nameof(HasDescription));
+        OnPropertyChanged(nameof(ShowOwnerName));
     }
 
     [RelayCommand]
