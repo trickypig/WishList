@@ -736,7 +736,13 @@ img {
   overflow-wrap: anywhere;
 }
 
+.list-title-block > div:first-child {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
 .list-description {
+  overflow-wrap: anywhere;
   color: var(--color-ink);
   font-size: 1rem;
   font-weight: 600;

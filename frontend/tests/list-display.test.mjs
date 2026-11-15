@@ -10,7 +10,7 @@ const result = await build({
 });
 const compiled = { exports: {} };
 new Function('require', 'module', 'exports', result.outputFiles[0].text)(createRequire(import.meta.url), compiled, compiled.exports);
-const { listColorVar, tileClass, countOpen, dropBeforeId } = compiled.exports;
+const { listColorVar, tileClass, countOpen, dropBeforeId, shouldShowImage } = compiled.exports;
 
 test('list color is stable per list id and wraps the five-color palette', () => {
   assert.equal(listColorVar(0), 'var(--tile-1)');
@@ -37,4 +37,11 @@ test('dropBeforeId uses the horizontal midpoint of the hovered card', () => {
   assert.equal(dropBeforeId(30, rect, section, 0), 10);
   assert.equal(dropBeforeId(70, rect, section, 0), 20);
   assert.equal(dropBeforeId(70, rect, section, 2), null);
+});
+
+test('shouldShowImage hides only the URL that failed, so a corrected URL shows again', () => {
+  assert.equal(shouldShowImage('', null), false);
+  assert.equal(shouldShowImage('https://a/x.jpg', null), true);
+  assert.equal(shouldShowImage('https://a/x.jpg', 'https://a/x.jpg'), false);
+  assert.equal(shouldShowImage('https://a/fixed.jpg', 'https://a/x.jpg'), true);
 });

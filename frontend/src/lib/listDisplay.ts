@@ -28,3 +28,8 @@ export function dropBeforeId(
   const after = clientX > rect.left + rect.width / 2;
   return after ? (section[index + 1]?.id ?? null) : section[index].id;
 }
+
+/** Show a photo unless this exact URL already failed to load; a corrected URL gets a fresh try. */
+export function shouldShowImage(imageUrl: string | null | undefined, failedUrl: string | null): boolean {
+  return !!imageUrl && imageUrl !== failedUrl;
+}

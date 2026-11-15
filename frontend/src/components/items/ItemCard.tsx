@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { Item } from '../../types';
-import { tileClass } from '../../lib/listDisplay';
+import { shouldShowImage, tileClass } from '../../lib/listDisplay';
 
 interface ItemCardProps {
   item: Item;
@@ -40,14 +40,14 @@ export default function ItemCard({
   const purchasedByMe = item.purchased_by_me || 0;
   const fullyPurchased = totalPurchased >= item.quantity_desired;
   // Scraped photos sometimes vanish; fall back to the plain tile
-  const [imageFailed, setImageFailed] = useState(false);
+  const [failedImageUrl, setFailedImageUrl] = useState<string | null>(null);
 
   return (
     <div className={`item-card ${compact ? 'item-card-compact' : ''} ${fullyPurchased && !isOwner ? 'item-card-purchased' : ''}`}>
       <div className="item-card-main">
         <div className={`item-image ${tileClass(tileIndex)}`}>
-          {item.image_url && !imageFailed
-            ? <img src={item.image_url} alt={item.name} onError={() => setImageFailed(true)} />
+          {shouldShowImage(item.image_url, failedImageUrl)
+            ? <img src={item.image_url} alt={item.name} onError={() => setFailedImageUrl(item.image_url)} />
             : <span className="item-image-placeholder" aria-hidden="true">🎁</span>}
         </div>
         <div className="item-details">
