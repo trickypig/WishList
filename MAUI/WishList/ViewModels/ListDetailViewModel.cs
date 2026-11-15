@@ -17,7 +17,44 @@ public partial class ListDetailViewModel : ObservableObject
 
     // Every item on the list in saved order, and the list's groups
     private List<Item> _allItems = [];
+    private List<Item> _suggestions = [];
     private List<ItemGroup> _groups = [];
+    private int _requestSequence;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(SuggestionsButtonText))]
+    private bool _showSuggestions;
+
+    [ObservableProperty]
+    private bool _suggestionsLoading;
+
+    public string SuggestionsButtonText => ShowSuggestions ? "Hide family suggestions" : "Show family suggestions";
+
+    partial void OnShowSuggestionsChanged(bool value) => ApplyFilter();
+
+    [RelayCommand]
+    private void ToggleSuggestions()
+    {
+        if (ShowSuggestions)
+        {
+            ResetSuggestions();
+            return;
+        }
+        ShowSuggestions = true;
+        SuggestionsLoading = true;
+        _ = LoadListAsync();
+    }
+
+    public void ResetSuggestions()
+    {
+        ++_requestSequence;
+        _suggestions = [];
+        if (WishList != null) WishList.Suggestions = null;
+        ShowSuggestions = false;
+        SuggestionsLoading = false;
+        IsRefreshing = false;
+        ApplyFilter();
+    }
 
     [ObservableProperty]
     private int _listId;
@@ -56,6 +93,14 @@ public partial class ListDetailViewModel : ObservableObject
     private void ApplyFilter()
     {
         Sections.Clear();
+        var userId = _authService.CurrentUser?.Id;
+        foreach (var item in _allItems.Concat(_suggestions))
+        {
+            item.CanEdit = item.IsSuggestion ? item.SuggestedBy == userId : IsOwner;
+            item.CanDelete = IsOwner || (item.IsSuggestion && item.SuggestedBy == userId);
+            item.CanReorder = IsOwner && !item.IsSuggestion;
+            item.CanPurchase = !IsOwner && !item.IsFullyPurchased && !item.HasMyPurchase;
+        }
         var visible = _allItems.Where(i => IsOwner || ShowPurchased || !i.IsFullyPurchased).ToList();
 
         // Empty sections are only worth showing to the owner, as somewhere to drop items
@@ -68,6 +113,12 @@ public partial class ListDetailViewModel : ObservableObject
             var items = visible.Where(i => SectionOf(i) == group.Id).ToList();
             if (items.Count > 0 || IsOwner)
                 Sections.Add(new ItemSection(group, items, IsOwner));
+        }
+
+        if (!IsOwner || (ShowSuggestions && !SuggestionsLoading))
+        {
+            var suggestions = _suggestions.Where(i => IsOwner || ShowPurchased || !i.IsFullyPurchased).ToList();
+            Sections.Add(new ItemSection(null, suggestions, true, isSuggestions: true));
         }
 
         OnPropertyChanged(nameof(EmptyMessage));
@@ -84,6 +135,10 @@ public partial class ListDetailViewModel : ObservableObject
 
     partial void OnListIdChanged(int value)
     {
+        ResetSuggestions();
+        _allItems = [];
+        _groups = [];
+        Sections.Clear();
         if (value > 0)
             _ = LoadListAsync();
     }
@@ -91,24 +146,37 @@ public partial class ListDetailViewModel : ObservableObject
     [RelayCommand]
     private async Task LoadListAsync()
     {
+        var sequence = ++_requestSequence;
         ErrorMessage = string.Empty;
         try
         {
-            var list = await _apiService.GetListAsync(ListId);
+            var list = await _apiService.GetListAsync(ListId, ShowSuggestions);
+            if (sequence != _requestSequence) return;
             WishList = list;
             IsOwner = list.UserId == _authService.CurrentUser?.Id;
 
             _allItems = list.Items ?? [];
+            _suggestions = list.Suggestions ?? [];
             _groups = list.Groups ?? [];
+            SuggestionsLoading = false;
             ApplyFilter();
         }
         catch (Exception ex)
         {
-            ErrorMessage = ex.Message;
+            if (sequence == _requestSequence)
+            {
+                ErrorMessage = ex.Message;
+                _suggestions = [];
+                ShowSuggestions = false;
+            }
         }
         finally
         {
-            IsRefreshing = false;
+            if (sequence == _requestSequence)
+            {
+                IsRefreshing = false;
+                SuggestionsLoading = false;
+            }
         }
     }
 
@@ -234,14 +302,23 @@ public partial class ListDetailViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private async Task AddSuggestionAsync()
+    {
+        if (IsOwner) return;
+        await Shell.Current.GoToAsync($"itemForm?listId={ListId}&suggestion=true");
+    }
+
+    [RelayCommand]
     private async Task EditItemAsync(Item item)
     {
-        await Shell.Current.GoToAsync($"itemForm?listId={ListId}&itemId={item.Id}");
+        if (!item.CanEdit) return;
+        await Shell.Current.GoToAsync($"itemForm?listId={ListId}&itemId={item.Id}&suggestion={item.IsSuggestion.ToString().ToLowerInvariant()}");
     }
 
     [RelayCommand]
     private async Task DeleteItemAsync(Item item)
     {
+        if (!item.CanDelete) return;
         var confirm = await Shell.Current.DisplayAlert("Delete Item", $"Delete \"{item.Name}\"?", "Delete", "Cancel");
         if (!confirm) return;
 
@@ -249,6 +326,7 @@ public partial class ListDetailViewModel : ObservableObject
         {
             await _apiService.DeleteItemAsync(item.Id);
             _allItems.Remove(item);
+            _suggestions.Remove(item);
             ApplyFilter();
         }
         catch (Exception ex)
@@ -314,7 +392,7 @@ public partial class ListDetailViewModel : ObservableObject
     /// </summary>
     public async Task MoveItemAsync(Item item, int? toGroupId, Item? before)
     {
-        if (!IsOwner || ReferenceEquals(item, before)) return;
+        if (!IsOwner || item.IsSuggestion || before?.IsSuggestion == true || ReferenceEquals(item, before)) return;
 
         var sections = SectionKeys.ToDictionary(
             k => k ?? 0,
@@ -364,7 +442,7 @@ public partial class ListDetailViewModel : ObservableObject
 
     /// <summary>Drop onto a group's header or an empty section: lands at the end of it.</summary>
     public Task DropOnSectionAsync(Item dragged, ItemSection section) =>
-        MoveItemAsync(dragged, section.GroupId, null);
+        section.IsSuggestions ? Task.CompletedTask : MoveItemAsync(dragged, section.GroupId, null);
 
     [RelayCommand]
     private async Task AddGroupAsync()

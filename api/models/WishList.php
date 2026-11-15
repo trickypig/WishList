@@ -6,7 +6,7 @@ class WishList
     {
         $stmt = $db->prepare(
             'SELECT wl.*,
-                    (SELECT COUNT(*) FROM items WHERE list_id = wl.id) AS item_count
+                    (SELECT COUNT(*) FROM items WHERE list_id = wl.id AND suggested_by IS NULL) AS item_count
              FROM wish_lists wl
              WHERE wl.user_id = :user_id
              ORDER BY wl.updated_at DESC'
@@ -20,6 +20,27 @@ class WishList
         $stmt = $db->prepare('SELECT * FROM wish_lists WHERE id = :id');
         $stmt->execute(['id' => $id]);
         return $stmt->fetch();
+    }
+
+    /** Shared-list permissions are checked on the server, including direct item requests. */
+    public static function canAccess(PDO $db, array $list, int $userId): bool
+    {
+        if ((int) $list['user_id'] === $userId) {
+            return true;
+        }
+        $stmt = $db->prepare(
+            "SELECT 1 FROM family_members owner_membership
+             JOIN family_members viewer_membership ON viewer_membership.family_id = owner_membership.family_id
+             WHERE owner_membership.user_id = :owner_id AND viewer_membership.user_id = :viewer_id
+               AND (:visibility = 'all_families' OR (:selected_visibility = 'selected_families' AND EXISTS (
+                   SELECT 1 FROM list_family_shares s WHERE s.list_id = :list_id AND s.family_id = owner_membership.family_id
+               ))) LIMIT 1"
+        );
+        $stmt->execute([
+            'owner_id' => $list['user_id'], 'viewer_id' => $userId,
+            'visibility' => $list['visibility'], 'selected_visibility' => $list['visibility'], 'list_id' => $list['id'],
+        ]);
+        return $stmt->fetchColumn() !== false;
     }
 
     public static function create(PDO $db, int $userId, string $title, string $description = '', string $visibility = 'all_families'): int
@@ -92,7 +113,7 @@ class WishList
         //   - 'selected_families': visible only if there's a list_family_shares entry for this family
         $stmt = $db->prepare(
             "SELECT wl.*, u.display_name AS owner_name,
-                    (SELECT COUNT(*) FROM items WHERE list_id = wl.id) AS item_count
+                    (SELECT COUNT(*) FROM items WHERE list_id = wl.id AND suggested_by IS NULL) AS item_count
              FROM wish_lists wl
              JOIN users u ON u.id = wl.user_id
              WHERE wl.user_id != :requester_id

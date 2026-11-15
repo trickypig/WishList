@@ -199,6 +199,7 @@ $alterStatements = [
     "ALTER TABLE users ADD COLUMN is_child INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE users ADD COLUMN token_version INTEGER NOT NULL DEFAULT 0",
     "ALTER TABLE items ADD COLUMN group_id INTEGER NULL",
+    "ALTER TABLE items ADD COLUMN suggested_by INTEGER NULL",
     "ALTER TABLE family_invites ADD COLUMN token_hash VARCHAR(64) NULL",
     "ALTER TABLE family_invites ADD COLUMN expires_at {$timestampType} NULL",
     "ALTER TABLE family_invites ADD COLUMN revoked_at {$timestampType} NULL",

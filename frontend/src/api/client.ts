@@ -90,8 +90,8 @@ export function createList(data: { title: string; description: string; visibilit
   return apiClient.post<{ list: WishList }>('/lists', data);
 }
 
-export function getList(id: number) {
-  return apiClient.get<{ list: WishList }>(`/lists/${id}`);
+export function getList(id: number, includeSuggestions = false) {
+  return apiClient.get<{ list: WishList }>(`/lists/${id}${includeSuggestions ? '?include_suggestions=1' : ''}`);
 }
 
 export function updateList(id: number, data: { title: string; description: string }) {
@@ -133,6 +133,10 @@ export function updateItem(id: number, data: {
   links?: { url: string; store_name: string }[];
 }) {
   return apiClient.put<{ item: Item }>(`/items/${id}`, data);
+}
+
+export function createSuggestion(listId: number, data: Parameters<typeof createItem>[1]) {
+  return apiClient.post<{ item: Item }>(`/lists/${listId}/suggestions`, data);
 }
 
 export function deleteItem(id: number) {

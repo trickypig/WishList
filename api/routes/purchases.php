@@ -15,6 +15,9 @@ function registerPurchaseRoutes(Router $router, PDO $db): void
 
         // Ensure the purchaser is not the list owner
         $list = WishList::getById($db, $item['list_id']);
+        if (!$list || !WishList::canAccess($db, $list, (int) $user['id'])) {
+            Response::error('You do not have access to this list', 403);
+        }
         if ($list && (int) $list['user_id'] === (int) $user['id']) {
             Response::error('You cannot purchase items from your own list', 403);
         }
@@ -35,6 +38,11 @@ function registerPurchaseRoutes(Router $router, PDO $db): void
         $item = Item::getById($db, $itemId);
         if (!$item) {
             Response::notFound('Item not found');
+        }
+
+        $list = WishList::getById($db, $item['list_id']);
+        if (!$list || !WishList::canAccess($db, $list, (int) $user['id']) || (int) $list['user_id'] === (int) $user['id']) {
+            Response::error('You cannot access purchase details for this list', 403);
         }
 
         Purchase::unmark($db, $itemId, $user['id']);

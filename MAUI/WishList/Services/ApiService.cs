@@ -92,9 +92,9 @@ public class ApiService : IApiService
         return result.GetProperty("list").Deserialize<WishListModel>()!;
     }
 
-    public async Task<WishListModel> GetListAsync(int id)
+    public async Task<WishListModel> GetListAsync(int id, bool includeSuggestions = false)
     {
-        var result = await GetAsync<JsonElement>($"/lists/{id}");
+        var result = await GetAsync<JsonElement>($"/lists/{id}{(includeSuggestions ? "?include_suggestions=1" : "")}");
         return result.GetProperty("list").Deserialize<WishListModel>()!;
     }
 
@@ -140,6 +140,21 @@ public class ApiService : IApiService
     public async Task<Item> UpdateItemAsync(int id, Item item)
     {
         var result = await PutAsync<JsonElement>($"/items/{id}", new
+        {
+            name = item.Name,
+            description = item.Description,
+            price = item.Price,
+            quantity_desired = item.QuantityDesired,
+            image_url = item.ImageUrl,
+            sort_order = item.SortOrder,
+            links = item.Links.Select(l => new { url = l.Url, store_name = l.StoreName }).ToList()
+        });
+        return result.GetProperty("item").Deserialize<Item>()!;
+    }
+
+    public async Task<Item> CreateSuggestionAsync(int listId, Item item)
+    {
+        var result = await PostAsync<JsonElement>($"/lists/{listId}/suggestions", new
         {
             name = item.Name,
             description = item.Description,

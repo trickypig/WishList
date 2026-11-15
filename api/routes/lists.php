@@ -55,8 +55,15 @@ function registerListRoutes(Router $router, PDO $db): void
             Response::notFound('List not found');
         }
 
+        if (!WishList::canAccess($db, $list, (int) $user['id'])) {
+            Response::error('You do not have access to this list', 403);
+        }
+
         $items = Item::getByListId($db, $listId);
         $isOwner = (int) $list['user_id'] === (int) $user['id'];
+        // Never send suggestion contents to the owner until explicitly requested.
+        $suggestions = (!$isOwner || ($_GET['include_suggestions'] ?? '') === '1')
+            ? Item::getByListId($db, $listId, true) : [];
 
         if (!$isOwner) {
             // Add purchase info to each item, but only for non-owners
@@ -66,9 +73,16 @@ function registerListRoutes(Router $router, PDO $db): void
                 $item['purchased_by_me'] = $purchaseInfo['purchased_by_me'];
             }
             unset($item);
+            foreach ($suggestions as &$suggestion) {
+                $purchaseInfo = Purchase::getPurchaseInfo($db, $suggestion['id'], $user['id']);
+                $suggestion['total_purchased'] = $purchaseInfo['total_purchased'];
+                $suggestion['purchased_by_me'] = $purchaseInfo['purchased_by_me'];
+            }
+            unset($suggestion);
         }
 
         $list['items'] = $items;
+        $list['suggestions'] = $suggestions;
         $list['groups'] = ItemGroup::getByListId($db, $listId);
         $list['is_owner'] = $isOwner;
 

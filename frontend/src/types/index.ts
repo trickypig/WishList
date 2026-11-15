@@ -45,6 +45,7 @@ export interface WishList {
   owner_name?: string;
   created_at: string;
   items?: Item[];
+  suggestions?: Item[];
   groups?: ItemGroup[];
   family_ids?: number[];
 }
@@ -74,6 +75,8 @@ export interface Item {
   image_url: string;
   sort_order: number;
   group_id: number | null;
+  suggested_by?: number | null;
+  suggested_by_name?: string | null;
   links: ItemLink[];
   total_purchased?: number;
   purchased_by_me?: number;

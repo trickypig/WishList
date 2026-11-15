@@ -3,6 +3,7 @@ import type { Item, ItemLink } from '../../types';
 
 interface ItemFormProps {
   initial?: Item;
+  submitLabel?: string;
   prefill?: {
     name?: string;
     price?: number | null;
@@ -20,7 +21,7 @@ interface ItemFormProps {
   onCancel: () => void;
 }
 
-export default function ItemForm({ initial, prefill, onSubmit, onCancel }: ItemFormProps) {
+export default function ItemForm({ initial, prefill, submitLabel, onSubmit, onCancel }: ItemFormProps) {
   const [name, setName] = useState(prefill?.name || initial?.name || '');
   const [description, setDescription] = useState(initial?.description || '');
   const [price, setPrice] = useState(
@@ -156,7 +157,7 @@ export default function ItemForm({ initial, prefill, onSubmit, onCancel }: ItemF
       <div className="form-actions">
         <button type="button" className="btn btn-outline" onClick={onCancel}>Cancel</button>
         <button type="submit" className="btn btn-primary" disabled={submitting}>
-          {submitting ? 'Saving...' : (initial ? 'Update Item' : 'Add Item')}
+          {submitting ? 'Saving...' : (submitLabel || (initial ? 'Update Item' : 'Add Item'))}
         </button>
       </div>
     </form>

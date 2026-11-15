@@ -1,1 +1,23 @@
 /* App-specific overrides - kept minimal, see index.css for main styles */
+.family-suggestions {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid var(--color-border);
+}
+
+.family-suggestions-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.family-suggestions-header h2 { margin: 0 0 0.35rem; }
+.family-suggestions-header p, .item-suggested-by {
+  color: var(--color-text-secondary);
+  font-size: 0.875rem;
+}
+.family-suggestions-header p { margin: 0; }
+.item-suggested-by { margin: 0.5rem 0; font-weight: 600; }

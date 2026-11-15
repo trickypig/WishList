@@ -21,6 +21,12 @@ public partial class ListDetailPage : ContentPage
             vm.LoadListCommand.Execute(null);
     }
 
+    protected override void OnDisappearing()
+    {
+        ViewModel?.ResetSuggestions();
+        base.OnDisappearing();
+    }
+
     private ListDetailViewModel? ViewModel => BindingContext as ListDetailViewModel;
 
     /// <summary>Gesture events can come from the recognizer or its view; either way we want the view.</summary>
@@ -52,7 +58,7 @@ public partial class ListDetailPage : ContentPage
 
     private void OnItemDragStarting(object? sender, DragStartingEventArgs e)
     {
-        if (ViewOf(sender!)?.BindingContext is Item item)
+        if (ViewOf(sender!)?.BindingContext is Item { CanReorder: true } item)
             e.Data.Properties[DraggedItemKey] = item;
         else
             e.Cancel = true;
@@ -60,7 +66,7 @@ public partial class ListDetailPage : ContentPage
 
     private void OnItemDragOver(object? sender, DragEventArgs e)
     {
-        var accept = DraggedItem(e.Data.Properties) != null;
+        var accept = DraggedItem(e.Data.Properties) != null && ViewOf(sender!)?.BindingContext is Item { IsSuggestion: false };
         e.AcceptedOperation = accept ? DataPackageOperation.Copy : DataPackageOperation.None;
         SetHighlight(ViewOf(sender!), accept);
     }
@@ -81,7 +87,7 @@ public partial class ListDetailPage : ContentPage
 
     private void OnSectionDragOver(object? sender, DragEventArgs e)
     {
-        var accept = DraggedItem(e.Data.Properties) != null;
+        var accept = DraggedItem(e.Data.Properties) != null && ViewOf(sender!)?.BindingContext is ItemSection { IsSuggestions: false };
         e.AcceptedOperation = accept ? DataPackageOperation.Copy : DataPackageOperation.None;
         SetHighlight(ViewOf(sender!), accept);
     }

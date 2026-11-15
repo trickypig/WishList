@@ -7,7 +7,7 @@ public interface IApiService
     // Lists
     Task<List<WishListModel>> GetListsAsync();
     Task<WishListModel> CreateListAsync(string title, string description, string visibility);
-    Task<WishListModel> GetListAsync(int id);
+    Task<WishListModel> GetListAsync(int id, bool includeSuggestions = false);
     Task<WishListModel> UpdateListAsync(int id, string title, string description);
     Task DeleteListAsync(int id);
     Task<WishListModel> UpdateListSharingAsync(int id, string visibility, List<int> familyIds);
@@ -15,6 +15,7 @@ public interface IApiService
 
     // Items
     Task<Item> CreateItemAsync(int listId, Item item);
+    Task<Item> CreateSuggestionAsync(int listId, Item item);
     Task<Item> UpdateItemAsync(int id, Item item);
     Task DeleteItemAsync(int id);
     Task ReorderItemsAsync(int listId, List<int> itemIds);

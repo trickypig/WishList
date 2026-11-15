@@ -8,6 +8,7 @@ namespace WishList.ViewModels;
 
 [QueryProperty(nameof(ListId), "listId")]
 [QueryProperty(nameof(ItemId), "itemId")]
+[QueryProperty(nameof(IsSuggestion), "suggestion")]
 public partial class ItemFormViewModel : ObservableObject
 {
     private readonly IApiService _apiService;
@@ -17,6 +18,10 @@ public partial class ItemFormViewModel : ObservableObject
 
     [ObservableProperty]
     private int _itemId;
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(PageTitle))]
+    private bool _isSuggestion;
 
     [ObservableProperty]
     private string _name = string.Empty;
@@ -50,7 +55,7 @@ public partial class ItemFormViewModel : ObservableObject
 
     public ObservableCollection<ItemLink> Links { get; } = [];
 
-    public string PageTitle => IsEditing ? "Edit Item" : "Add Item";
+    public string PageTitle => IsSuggestion ? (IsEditing ? "Edit Suggestion" : "Add Suggestion") : (IsEditing ? "Edit Item" : "Add Item");
 
     public ItemFormViewModel(IApiService apiService)
     {
@@ -72,8 +77,10 @@ public partial class ItemFormViewModel : ObservableObject
         try
         {
             var list = await _apiService.GetListAsync(ListId);
-            var item = list.Items?.FirstOrDefault(i => i.Id == ItemId);
+            var item = (list.Items ?? []).Concat(list.Suggestions ?? []).FirstOrDefault(i => i.Id == ItemId);
             if (item == null) return;
+
+            IsSuggestion = item.IsSuggestion;
 
             Name = item.Name;
             Description = item.Description;
@@ -120,6 +127,8 @@ public partial class ItemFormViewModel : ObservableObject
 
             if (IsEditing)
                 await _apiService.UpdateItemAsync(ItemId, item);
+            else if (IsSuggestion)
+                await _apiService.CreateSuggestionAsync(ListId, item);
             else
                 await _apiService.CreateItemAsync(ListId, item);
 

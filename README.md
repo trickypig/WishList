@@ -4,6 +4,10 @@ A family wish list app where users create and share gift lists with family membe
 
 **Stack**: PHP backend (custom router, no framework) | React 19 + Vite + TypeScript frontend | .NET MAUI desktop/mobile app
 
+Family members can add gifts under **Family suggestions** on another member's shared list, with the same product details and links as normal items. Each suggestion identifies its author. Suggestions stay separate from official wishes and their item counts. Authors can edit or delete their suggestions, and the list owner can remove them.
+
+Suggestions are hidden from the owner by default. **Show family suggestions** reveals them for the current visit; purchase details remain hidden from the owner. Before deploying this feature, run `php api/migrations/migrate.php` to add the nullable `items.suggested_by` column; existing items remain official wishes.
+
 ---
 
 ## Prerequisites
@@ -238,6 +242,7 @@ The build number is the latest TestFlight build number plus one. `ApplicationDis
 | POST | `/api/lists` | Yes | Create new list |
 | GET | `/api/lists/family/{familyId}` | Yes | Get lists visible to a family |
 | GET | `/api/lists/{id}` | Yes | Get list with items |
+| GET | `/api/lists/{id}?include_suggestions=1` | Yes | Explicitly reveal suggestions to the owner; purchase details remain hidden |
 | PUT | `/api/lists/{id}` | Yes | Update list (owner only) |
 | DELETE | `/api/lists/{id}` | Yes | Delete list (owner only) |
 | PUT | `/api/lists/{id}/sharing` | Yes | Update sharing settings (owner only) |
@@ -247,8 +252,9 @@ The build number is the latest TestFlight build number plus one. `ApplicationDis
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
 | POST | `/api/lists/{listId}/items` | Yes | Create item (owner only) |
-| PUT | `/api/items/{id}` | Yes | Update item (owner only) |
-| DELETE | `/api/items/{id}` | Yes | Delete item (owner only) |
+| POST | `/api/lists/{listId}/suggestions` | Yes | Suggest an item (family members with access, excluding owner) |
+| PUT | `/api/items/{id}` | Yes | Update official item (owner) or suggestion (author with access) |
+| DELETE | `/api/items/{id}` | Yes | Delete item (owner, or suggestion author with access) |
 | PUT | `/api/lists/{listId}/items/reorder` | Yes | Reorder items (owner only) |
 
 ### Purchases

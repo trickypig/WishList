@@ -2,10 +2,13 @@
 
 class Item
 {
-    public static function getByListId(PDO $db, int $listId): array
+    public static function getByListId(PDO $db, int $listId, bool $suggestions = false): array
     {
         $stmt = $db->prepare(
-            'SELECT * FROM items WHERE list_id = :list_id ORDER BY sort_order ASC, id ASC'
+            'SELECT i.*, u.display_name AS suggested_by_name FROM items i
+             LEFT JOIN users u ON u.id = i.suggested_by
+             WHERE i.list_id = :list_id AND i.suggested_by IS ' . ($suggestions ? 'NOT NULL' : 'NULL') . '
+             ORDER BY i.sort_order ASC, i.id ASC'
         );
         $stmt->execute(['list_id' => $listId]);
         $items = $stmt->fetchAll();
@@ -37,16 +40,18 @@ class Item
         string $imageUrl = '',
         int $sortOrder = 0,
         array $links = [],
-        ?int $groupId = null
+        ?int $groupId = null,
+        ?int $suggestedBy = null
     ): int {
         $stmt = $db->prepare(
-            'INSERT INTO items (list_id, group_id, name, description, price, quantity_desired, image_url, sort_order, created_at, updated_at)
-             VALUES (:list_id, :group_id, :name, :description, :price, :quantity_desired, :image_url, :sort_order, :created_at, :updated_at)'
+            'INSERT INTO items (list_id, group_id, suggested_by, name, description, price, quantity_desired, image_url, sort_order, created_at, updated_at)
+             VALUES (:list_id, :group_id, :suggested_by, :name, :description, :price, :quantity_desired, :image_url, :sort_order, :created_at, :updated_at)'
         );
         $now = date('Y-m-d H:i:s');
         $stmt->execute([
             'list_id'          => $listId,
             'group_id'         => $groupId,
+            'suggested_by'     => $suggestedBy,
             'name'             => $name,
             'description'      => $description,
             'price'            => $price,
@@ -123,7 +128,7 @@ class Item
 
     public static function reorder(PDO $db, int $listId, array $itemIds): void
     {
-        $stmt = $db->prepare('UPDATE items SET sort_order = :sort_order WHERE id = :id AND list_id = :list_id');
+        $stmt = $db->prepare('UPDATE items SET sort_order = :sort_order WHERE id = :id AND list_id = :list_id AND suggested_by IS NULL');
         foreach ($itemIds as $order => $itemId) {
             $stmt->execute([
                 'sort_order' => $order,
@@ -140,7 +145,7 @@ class Item
     public static function arrange(PDO $db, int $listId, array $entries): void
     {
         $stmt = $db->prepare(
-            'UPDATE items SET sort_order = :sort_order, group_id = :group_id WHERE id = :id AND list_id = :list_id'
+            'UPDATE items SET sort_order = :sort_order, group_id = :group_id WHERE id = :id AND list_id = :list_id AND suggested_by IS NULL'
         );
         foreach (array_values($entries) as $order => $entry) {
             $stmt->execute([

@@ -3,6 +3,8 @@ import type { Item } from '../../types';
 interface ItemCardProps {
   item: Item;
   isOwner: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
   onEdit?: (item: Item) => void;
   onDelete?: (item: Item) => void;
   onMoveUp?: (item: Item) => void;
@@ -17,6 +19,8 @@ interface ItemCardProps {
 export default function ItemCard({
   item,
   isOwner,
+  canEdit = isOwner,
+  canDelete = isOwner,
   onEdit,
   onDelete,
   onMoveUp,
@@ -47,6 +51,9 @@ export default function ItemCard({
             )}
           </div>
           {item.description && <p className="item-desc">{item.description}</p>}
+          {item.suggested_by != null && (
+            <p className="item-suggested-by">Suggested by {item.suggested_by_name || 'Family member'}</p>
+          )}
           {item.quantity_desired > 1 && isOwner && (
             <span className="item-qty">Qty desired: {item.quantity_desired}</span>
           )}
@@ -88,7 +95,7 @@ export default function ItemCard({
       </div>
 
       <div className="item-actions">
-        {isOwner ? (
+        {isOwner && item.suggested_by == null && (
           <>
             <div className="reorder-buttons">
               <button
@@ -108,10 +115,11 @@ export default function ItemCard({
                 &#9660;
               </button>
             </div>
-            <button className="btn btn-sm btn-outline" onClick={() => onEdit?.(item)}>Edit</button>
-            <button className="btn btn-sm btn-danger" onClick={() => onDelete?.(item)}>Delete</button>
           </>
-        ) : (
+        )}
+        {canEdit && <button className="btn btn-sm btn-outline" onClick={() => onEdit?.(item)}>Edit</button>}
+        {canDelete && <button className="btn btn-sm btn-danger" onClick={() => onDelete?.(item)}>Delete</button>}
+        {!isOwner && (
           <>
             {!fullyPurchased && purchasedByMe === 0 && (
               <button className="btn btn-sm btn-primary" onClick={() => onPurchase?.(item)}>

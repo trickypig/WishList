@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback, type ClipboardEvent, type DragEvent, type FormEvent } from 'react';
+import { useState, useEffect, useCallback, useRef, type ClipboardEvent, type DragEvent, type FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  getList, updateList, deleteList, createItem, updateItem,
+  getList, updateList, deleteList, createItem, createSuggestion, updateItem,
   deleteItem, arrangeItems, purchaseItem, unpurchaseItem, scrapeUrl,
   createGroup, updateGroup, deleteGroup,
 } from '../api/client';
@@ -33,9 +33,18 @@ function isWebUrl(text: string): boolean {
 
 export default function ListDetailPage() {
   const { id } = useParams<{ id: string }>();
+  // Each visit starts hidden, including navigation directly between two lists.
+  return <ListDetail key={id} />;
+}
+
+function ListDetail() {
+  const { id } = useParams<{ id: string }>();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [list, setList] = useState<WishList | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const requestSequence = useRef(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editingTitle, setEditingTitle] = useState(false);
@@ -61,17 +70,30 @@ export default function ListDetailPage() {
   const isOwner = list ? list.user_id === user?.id : false;
 
   const loadList = useCallback(async () => {
+    const sequence = ++requestSequence.current;
     try {
-      const res = await getList(Number(id));
+      const res = await getList(Number(id), showSuggestions);
+      if (sequence !== requestSequence.current) return;
       setList(res.list);
       setTitle(res.list.title);
       setDescription(res.list.description);
     } catch {
-      setError('Failed to load list');
+      if (sequence === requestSequence.current) setError('Failed to load list');
     } finally {
-      setLoading(false);
+      if (sequence === requestSequence.current) {
+        setLoading(false);
+        setSuggestionsLoading(false);
+      }
     }
-  }, [id]);
+  }, [id, showSuggestions]);
+
+  function toggleSuggestions() {
+    ++requestSequence.current;
+    setList(current => current ? { ...current, suggestions: [] } : current);
+    setSuggestionsLoading(!showSuggestions);
+    setShowSuggestions(!showSuggestions);
+    setError('');
+  }
 
   useEffect(() => {
     loadList();
@@ -192,7 +214,7 @@ export default function ListDetailPage() {
     links: { url: string; store_name: string }[];
   }) {
     if (!list) return;
-    await createItem(list.id, {
+    await (isOwner ? createItem : createSuggestion)(list.id, {
       ...data,
       sort_order: (list.items?.length || 0) + 1,
     });
@@ -409,6 +431,62 @@ export default function ListDetailPage() {
     }
   }
 
+  function renderAddItemControls() {
+    return (
+        <div className="add-item-section">
+          {scraping && (
+            <div className="drop-zone drop-zone-loading">
+              <div className="spinner" />
+              <p>Fetching product info...</p>
+            </div>
+          )}
+          {showItemForm ? (
+            <ItemForm
+              prefill={prefill}
+              submitLabel={isOwner ? undefined : "Add Suggestion"}
+              onSubmit={handleAddItem}
+              onCancel={() => { setShowItemForm(false); setPrefill(undefined); }}
+            />
+          ) : !scraping ? (
+            <div className="add-item-controls">
+              <div
+                className={`drop-zone ${dragOver ? 'drop-zone-active' : ''}`}
+                onDragOver={handleDragOver}
+                onDragEnter={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <div className="drop-zone-content">
+                  <span className="drop-zone-icon">+</span>
+                  <span className="drop-zone-text">
+                    Drag a link here from Amazon, etc. to auto-fill item details
+                  </span>
+                </div>
+              </div>
+              <form className="url-paste-form" onSubmit={handleUrlSubmit}>
+                <input
+                  type="text"
+                  inputMode="url"
+                  className="url-paste-input"
+                  aria-label="Product link"
+                  placeholder="Or paste a link here"
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  onPaste={handleUrlPaste}
+                />
+                <button type="submit" className="btn btn-outline" disabled={!urlInput.trim()}>
+                  Fetch
+                </button>
+              </form>
+              <button className="btn btn-primary" onClick={() => { setPrefill(undefined); setShowItemForm(true); }}>
+                {isOwner ? '+ Add Item Manually' : '+ Add Suggestion Manually'}
+              </button>
+            </div>
+          ) : null}
+        </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="loading-container">
@@ -469,64 +547,13 @@ export default function ListDetailPage() {
         )}
       </div>
 
-      {isOwner && (
-        <div className="add-item-section">
-          {scraping && (
-            <div className="drop-zone drop-zone-loading">
-              <div className="spinner" />
-              <p>Fetching product info...</p>
-            </div>
-          )}
-          {showItemForm ? (
-            <ItemForm
-              prefill={prefill}
-              onSubmit={handleAddItem}
-              onCancel={() => { setShowItemForm(false); setPrefill(undefined); }}
-            />
-          ) : !scraping ? (
-            <div className="add-item-controls">
-              <div
-                className={`drop-zone ${dragOver ? 'drop-zone-active' : ''}`}
-                onDragOver={handleDragOver}
-                onDragEnter={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-              >
-                <div className="drop-zone-content">
-                  <span className="drop-zone-icon">+</span>
-                  <span className="drop-zone-text">
-                    Drag a link here from Amazon, etc. to auto-fill item details
-                  </span>
-                </div>
-              </div>
-              <form className="url-paste-form" onSubmit={handleUrlSubmit}>
-                <input
-                  type="text"
-                  inputMode="url"
-                  className="url-paste-input"
-                  aria-label="Product link"
-                  placeholder="Or paste a link here"
-                  value={urlInput}
-                  onChange={(e) => setUrlInput(e.target.value)}
-                  onPaste={handleUrlPaste}
-                />
-                <button type="submit" className="btn btn-outline" disabled={!urlInput.trim()}>
-                  Fetch
-                </button>
-              </form>
-              <button className="btn btn-primary" onClick={() => { setPrefill(undefined); setShowItemForm(true); }}>
-                + Add Item Manually
-              </button>
-            </div>
-          ) : null}
-        </div>
-      )}
+      {isOwner && renderAddItemControls()}
 
       {editingItem && (
         <div className="modal-overlay" onClick={() => setEditingItem(null)}>
           <div className="modal modal-wide" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h2>Edit Item</h2>
+              <h2>{editingItem.suggested_by != null ? 'Edit Suggestion' : 'Edit Item'}</h2>
               <button className="modal-close" onClick={() => setEditingItem(null)}>&times;</button>
             </div>
             <ItemForm
@@ -620,6 +647,37 @@ export default function ListDetailPage() {
           }}
         />
       )}
+
+      <section className="family-suggestions" aria-labelledby="family-suggestions-heading">
+        <div className="family-suggestions-header">
+          <div>
+            <h2 id="family-suggestions-heading">Family suggestions</h2>
+            <p>{isOwner ? 'Gift ideas from your family. Hidden until you choose to look.' : 'Gift ideas from family, separate from the official wish list.'}</p>
+          </div>
+          {isOwner && (
+            <button className="btn btn-outline" onClick={toggleSuggestions} aria-expanded={showSuggestions} aria-controls="family-suggestions-content">
+              {showSuggestions ? 'Hide family suggestions' : 'Show family suggestions'}
+            </button>
+          )}
+        </div>
+        {(!isOwner || showSuggestions) && (
+          <div id="family-suggestions-content">
+            {!isOwner && renderAddItemControls()}
+            {suggestionsLoading ? <p role="status">Loading suggestions...</p> : (
+              <div className="items-list">
+                {(list.suggestions || []).map(item => (
+                  <ItemCard key={item.id} item={item} isOwner={isOwner}
+                    canEdit={item.suggested_by === user?.id}
+                    canDelete={isOwner || item.suggested_by === user?.id}
+                    onEdit={setEditingItem} onDelete={handleDeleteItem}
+                    onPurchase={handlePurchase} onUnpurchase={handleUnpurchase} />
+                ))}
+                {!list.suggestions?.length && <p className="item-group-empty">No family suggestions yet.</p>}
+              </div>
+            )}
+          </div>
+        )}
+      </section>
     </div>
   );
 }

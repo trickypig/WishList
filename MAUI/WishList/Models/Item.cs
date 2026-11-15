@@ -34,6 +34,34 @@ public class Item
     [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
     public int? GroupId { get; set; }
 
+    [JsonPropertyName("suggested_by")]
+    [JsonNumberHandling(JsonNumberHandling.AllowReadingFromString)]
+    public int? SuggestedBy { get; set; }
+
+    [JsonPropertyName("suggested_by_name")]
+    public string? SuggestedByName { get; set; }
+
+    [JsonIgnore]
+    public bool IsSuggestion => SuggestedBy != null;
+
+    [JsonIgnore]
+    public string SuggestedByLabel => $"Suggested by {SuggestedByName ?? "Family member"}";
+
+    [JsonIgnore]
+    public bool CanEdit { get; set; }
+
+    [JsonIgnore]
+    public bool CanDelete { get; set; }
+
+    [JsonIgnore]
+    public bool CanReorder { get; set; }
+
+    [JsonIgnore]
+    public bool CanPurchase { get; set; }
+
+    [JsonIgnore]
+    public bool HasMyPurchase => PurchasedByMe > 0;
+
     /// <summary>Items inside a group are drawn a little smaller.</summary>
     [JsonIgnore]
     public bool IsInGroup => GroupId != null;

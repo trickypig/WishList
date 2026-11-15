@@ -2,6 +2,30 @@
 
 function registerItemRoutes(Router $router, PDO $db): void
 {
+    $router->post('/lists/{listId}/suggestions', function (array $params) use ($db) {
+        $user = authenticate();
+        $listId = (int) $params['listId'];
+        $body = $params['_body'];
+        $list = WishList::getById($db, $listId);
+        if (!$list) {
+            Response::notFound('List not found');
+        }
+        if ((int) $list['user_id'] === (int) $user['id'] || !WishList::canAccess($db, $list, (int) $user['id'])) {
+            Response::error('You can only suggest items on another family member\'s shared list', 403);
+        }
+        $missing = Validator::required($body, ['name']);
+        if (!empty($missing)) {
+            Response::error('Missing required fields: ' . implode(', ', $missing));
+        }
+        $itemId = Item::create(
+            $db, $listId, $body['name'], $body['description'] ?? '',
+            isset($body['price']) ? (float) $body['price'] : null,
+            max(1, (int) ($body['quantity_desired'] ?? 1)), $body['image_url'] ?? '',
+            (int) ($body['sort_order'] ?? 0), $body['links'] ?? [], null, (int) $user['id']
+        );
+        Response::json(['item' => Item::getById($db, $itemId)], 201);
+    });
+
     // POST /lists/{listId}/items - create item
     $router->post('/lists/{listId}/items', function (array $params) use ($db) {
         $user = authenticate();
@@ -51,8 +75,11 @@ function registerItemRoutes(Router $router, PDO $db): void
         }
 
         $list = WishList::getById($db, $item['list_id']);
-        if (!$list || (int) $list['user_id'] !== (int) $user['id']) {
-            Response::error('You do not own this list', 403);
+        $canEdit = $item['suggested_by'] === null
+            ? $list && (int) $list['user_id'] === (int) $user['id']
+            : (int) $item['suggested_by'] === (int) $user['id'];
+        if (!$list || !$canEdit || !WishList::canAccess($db, $list, (int) $user['id'])) {
+            Response::error('You cannot edit this item', 403);
         }
 
         $missing = Validator::required($body, ['name']);
@@ -87,8 +114,10 @@ function registerItemRoutes(Router $router, PDO $db): void
         }
 
         $list = WishList::getById($db, $item['list_id']);
-        if (!$list || (int) $list['user_id'] !== (int) $user['id']) {
-            Response::error('You do not own this list', 403);
+        $canDelete = $list && ((int) $list['user_id'] === (int) $user['id']
+            || ($item['suggested_by'] !== null && (int) $item['suggested_by'] === (int) $user['id']));
+        if (!$canDelete || !WishList::canAccess($db, $list, (int) $user['id'])) {
+            Response::error('You cannot delete this item', 403);
         }
 
         Item::delete($db, $itemId);
