@@ -16,8 +16,10 @@ public static class MauiProgram
             .UseMauiCommunityToolkit()
             .ConfigureFonts(fonts =>
             {
-                fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-                fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                fonts.AddFont("Inter-Regular.ttf", "BodyRegular");
+                fonts.AddFont("Inter-SemiBold.ttf", "BodySemibold");
+                fonts.AddFont("SpaceGrotesk-Medium.ttf", "DisplayMedium");
+                fonts.AddFont("SpaceGrotesk-Bold.ttf", "DisplayBold");
             });
 
         // Services (each creates its own HttpClient internally)

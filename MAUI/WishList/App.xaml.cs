@@ -10,6 +10,13 @@ public partial class App : Application
     {
         InitializeComponent();
         _authService = authService;
+#if DEBUG
+        // Dev aid: WISH_THEME=dark|light forces a theme so both modes can be checked
+        // without changing the OS setting. Release builds always follow the device.
+        var theme = Environment.GetEnvironmentVariable("WISH_THEME");
+        if (string.Equals(theme, "dark", StringComparison.OrdinalIgnoreCase)) UserAppTheme = AppTheme.Dark;
+        else if (string.Equals(theme, "light", StringComparison.OrdinalIgnoreCase)) UserAppTheme = AppTheme.Light;
+#endif
     }
 
     protected override Window CreateWindow(IActivationState? activationState)

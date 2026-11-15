@@ -18,7 +18,7 @@
                 <VerticalStackLayout Spacing="8">
                     <Label Text="Invite Code" FontAttributes="Bold" FontSize="16" />
                     <HorizontalStackLayout Spacing="10">
-                        <Label Text="{Binding Family.InviteCode}" FontSize="20" FontFamily="OpenSansRegular"
+                        <Label Text="{Binding Family.InviteCode}" FontSize="20" FontFamily="DisplayBold"
                                VerticalOptions="Center" />
                         <Button Text="{Binding Copied, Converter={StaticResource BusyTextConverter}, ConverterParameter='Copied!|Copy'}"
                                 Command="{Binding CopyInviteCodeCommand}"
