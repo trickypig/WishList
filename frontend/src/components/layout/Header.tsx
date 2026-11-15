@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, NavLink } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 export default function Header() {
@@ -14,10 +14,10 @@ export default function Header() {
         <nav className="header-nav">
           {isAuthenticated ? (
             <>
-              <Link to="/dashboard" className="nav-link">My Lists</Link>
-              <Link to="/families" className="nav-link">Families</Link>
+              <NavLink to="/dashboard" className="nav-link">My Lists</NavLink>
+              <NavLink to="/families" className="nav-link">Families</NavLink>
               {user?.is_admin === 1 && (
-                <Link to="/admin" className="nav-link nav-link-admin">Admin</Link>
+                <NavLink to="/admin" className="nav-link nav-link-admin">Admin</NavLink>
               )}
               <div className="header-user">
                 <span className="user-name">{user?.display_name}</span>
@@ -26,8 +26,8 @@ export default function Header() {
             </>
           ) : (
             <>
-              <Link to="/login" className="nav-link">Login</Link>
-              <Link to="/register" className="nav-link">Register</Link>
+              <NavLink to="/login" className="nav-link">Login</NavLink>
+              <NavLink to="/register" className="nav-link">Register</NavLink>
             </>
           )}
         </nav>
