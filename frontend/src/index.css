@@ -1263,10 +1263,15 @@ img {
 /* ===== Item Form ===== */
 .item-form {
   background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
+  border: var(--outline);
   border-radius: var(--radius-md);
   padding: 1.25rem;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-card);
+}
+.modal .item-form {
+  border: none;
+  box-shadow: none;
+  padding: 0;
 }
 
 .link-row {
@@ -1276,30 +1281,23 @@ img {
   align-items: center;
 }
 
-.link-url {
-  flex: 2;
-  padding: 0.45rem 0.6rem;
-  font-size: 0.85rem;
-  font-family: var(--font-sans);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  color: var(--color-text);
-}
-
+.link-url,
 .link-store {
-  flex: 1;
   padding: 0.45rem 0.6rem;
-  font-size: 0.85rem;
+  font-size: 0.875rem;
   font-family: var(--font-sans);
-  border: 1px solid var(--color-border);
+  border: var(--outline-sm);
   border-radius: var(--radius-sm);
+  background: #fff;
   color: var(--color-text);
 }
+.link-url { flex: 2; }
+.link-store { flex: 1; }
 
 .link-url:focus,
 .link-store:focus {
   outline: none;
-  border-color: var(--color-border-focus);
+  box-shadow: 3px 3px 0 var(--color-primary);
 }
 
 /* ===== Modal ===== */
@@ -1411,8 +1409,10 @@ img {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.6rem 0;
-  border-bottom: 1px solid var(--color-border);
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.65rem 0;
+  border-bottom: 2px dashed rgba(17, 17, 17, 0.25);
 }
 .member-row:last-child {
   border-bottom: none;
@@ -1421,16 +1421,19 @@ img {
 .member-info {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .member-name {
-  font-size: 0.9rem;
-  font-weight: 500;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
 .member-email {
-  font-size: 0.8rem;
-  color: var(--color-text-muted);
+  font-size: 0.82rem;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
 }
 
 .member-actions {
@@ -1440,22 +1443,29 @@ img {
 }
 
 .role-badge {
-  font-size: 0.7rem;
-  font-weight: 600;
+  display: inline-block;
+  font-family: var(--font-display);
+  font-size: 0.72rem;
+  font-weight: 700;
   text-transform: uppercase;
-  padding: 0.15rem 0.5rem;
-  border-radius: 100px;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.04em;
+  padding: 0.05rem 0.55rem;
+  border: var(--outline-sm);
+  border-radius: 99px;
+  background: #fff;
+  color: var(--color-ink);
 }
 
 .role-admin {
-  background: var(--color-primary-light);
-  color: var(--color-primary);
+  background: var(--color-highlight);
 }
 
 .role-member {
-  background: #f0f0f0;
-  color: var(--color-text-secondary);
+  background: var(--tile-1);
+}
+
+.role-child {
+  background: var(--tile-4);
 }
 
 /* ===== Invite Code ===== */
@@ -1464,17 +1474,19 @@ img {
   align-items: center;
   gap: 0.5rem;
   margin: 0.5rem 0;
+  flex-wrap: wrap;
 }
 
 .invite-code {
-  background: var(--color-bg);
-  padding: 0.45rem 0.8rem;
+  background: var(--color-highlight);
+  padding: 0.4rem 0.8rem;
+  border: var(--outline);
   border-radius: var(--radius-sm);
-  font-size: 1rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  color: var(--color-primary);
-  border: 1px solid var(--color-border);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  color: var(--color-ink);
 }
 
 /* ===== Settings ===== */
@@ -1488,18 +1500,21 @@ img {
   display: flex;
   gap: 1rem;
   padding: 0.4rem 0;
+  flex-wrap: wrap;
 }
 
 .settings-label {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: var(--color-text-secondary);
+  font-family: var(--font-display);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--color-ink);
   min-width: 120px;
 }
 
 .settings-value {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: var(--color-text);
+  overflow-wrap: anywhere;
 }
 
 /* ===== Utilities ===== */
@@ -1510,6 +1525,12 @@ img {
 
 .page {
   max-width: 800px;
+}
+
+/* Stacked cards on simple pages need breathing room for their shadows */
+.page > .card + .card,
+.page > .card + .btn {
+  margin-top: 1.25rem;
 }
 
 .error-page {
@@ -1629,25 +1650,28 @@ img {
 
 .admin-stat-card {
   background: var(--color-bg-card);
-  border: 1px solid var(--color-border);
+  border: var(--outline-sm);
   border-radius: var(--radius-md);
   padding: 1rem;
   text-align: center;
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-card);
 }
 
 .admin-stat-value {
-  font-size: 1.75rem;
+  font-family: var(--font-display);
+  font-size: 2rem;
   font-weight: 700;
-  color: var(--color-primary);
+  color: var(--color-ink);
 }
 
-.admin-stat-success .admin-stat-value { color: var(--color-success); }
-.admin-stat-error .admin-stat-value { color: var(--color-danger); }
+.admin-stat-success { background: var(--color-success); }
+.admin-stat-error { background: #ffd2d2; }
 
 .admin-stat-label {
   font-size: 0.8rem;
-  color: var(--color-text-muted);
+  font-family: var(--font-display);
+  font-weight: 500;
+  color: var(--color-ink);
   margin-top: 0.2rem;
 }
 
@@ -1663,8 +1687,8 @@ img {
   transition: box-shadow 0.2s, transform 0.2s;
 }
 .admin-nav-card:hover {
-  box-shadow: var(--shadow-md);
-  transform: translateY(-2px);
+  box-shadow: var(--shadow-card-hover);
+  transform: translate(-2px, -2px);
   color: inherit;
 }
 
@@ -1683,21 +1707,21 @@ img {
   padding: 0.45rem 0.7rem;
   font-size: 0.85rem;
   font-family: var(--font-sans);
-  border: 1px solid var(--color-border);
+  border: var(--outline-sm);
   border-radius: var(--radius-sm);
   color: var(--color-text);
   min-width: 180px;
 }
 .admin-filter-input:focus {
   outline: none;
-  border-color: var(--color-border-focus);
+  box-shadow: 3px 3px 0 var(--color-primary);
 }
 
 .admin-filter-select {
   padding: 0.45rem 0.7rem;
   font-size: 0.85rem;
   font-family: var(--font-sans);
-  border: 1px solid var(--color-border);
+  border: var(--outline-sm);
   border-radius: var(--radius-sm);
   color: var(--color-text);
   background: var(--color-bg-input);
@@ -1705,9 +1729,9 @@ img {
 
 .admin-table-wrapper {
   overflow-x: auto;
-  border: 1px solid var(--color-border);
+  border: var(--outline-sm);
   border-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
+  box-shadow: var(--shadow-card);
 }
 
 .admin-table {
@@ -1718,18 +1742,18 @@ img {
 }
 
 .admin-table th {
-  background: var(--color-bg);
-  font-weight: 600;
-  color: var(--color-text-secondary);
+  background: var(--color-ink);
+  font-family: var(--font-display);
+  font-weight: 700;
+  color: #fff;
   text-align: left;
   padding: 0.6rem 0.75rem;
-  border-bottom: 2px solid var(--color-border);
   white-space: nowrap;
 }
 
 .admin-table td {
   padding: 0.5rem 0.75rem;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: var(--outline-sm);
   vertical-align: middle;
 }
 
@@ -1737,12 +1761,8 @@ img {
   background: var(--color-bg-hover);
 }
 
-.admin-row-error {
-  background: #fef8f8;
-}
-.admin-row-error:hover {
-  background: #fef2f2 !important;
-}
+.admin-row-error { background: #ffe8e8; }
+.admin-row-error:hover { background: #ffd2d2 !important; }
 
 .admin-cell-nowrap {
   white-space: nowrap;
@@ -1761,27 +1781,24 @@ img {
 
 .admin-badge {
   display: inline-block;
+  border: var(--outline-sm);
+  color: var(--color-ink);
+  font-family: var(--font-display);
   font-size: 0.7rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
   padding: 0.15rem 0.45rem;
   border-radius: 100px;
   letter-spacing: 0.03em;
 }
 
-.admin-badge-success {
-  background: var(--color-success-light);
-  color: var(--color-success);
-}
+.admin-badge-success { background: var(--color-success); }
 
-.admin-badge-error {
-  background: #fef2f2;
-  color: var(--color-danger);
-}
+.admin-badge-error { background: var(--color-danger); }
 
 .admin-http-code {
   font-size: 0.75rem;
-  color: var(--color-text-muted);
+  color: var(--color-text-secondary);
   margin-left: 0.35rem;
 }
 
@@ -1806,7 +1823,7 @@ img {
   display: flex;
   gap: 0.75rem;
   padding: 0.3rem 0;
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: var(--outline-sm);
 }
 
 .admin-detail-label {
@@ -1823,8 +1840,9 @@ img {
 }
 
 .admin-raw-html {
-  background: #1e1e2e;
-  color: #cdd6f4;
+  background: var(--color-ink);
+  color: #f4f4f4;
+  border: var(--outline);
   padding: 1rem;
   border-radius: var(--radius-sm);
   font-size: 0.75rem;
