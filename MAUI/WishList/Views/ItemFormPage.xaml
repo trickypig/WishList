@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:WishList.Controls"
              xmlns:vm="clr-namespace:WishList.ViewModels"
              xmlns:models="clr-namespace:WishList.Models"
              x:Class="WishList.Views.ItemFormPage"
@@ -8,17 +9,20 @@
              Title="{Binding PageTitle}">
 
     <ScrollView Padding="16">
-        <VerticalStackLayout Spacing="12" MaximumWidthRequest="600">
+        <VerticalStackLayout Spacing="10" MaximumWidthRequest="600">
 
-            <Label Text="{Binding ErrorMessage}" TextColor="Red"
-                   IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}" />
+            <Border Style="{StaticResource ErrorBlock}" IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}">
+                <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorText}" />
+            </Border>
 
             <!-- URL Scraping -->
-            <Frame Style="{StaticResource CardFrame}">
+            <controls:PopCard>
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Paste URL to auto-fill" FontAttributes="Bold" />
-                    <Entry Placeholder="https://www.amazon.com/..."
+                    <Label Text="Paste URL to auto-fill" FontFamily="DisplayBold" />
+                    <Border Style="{StaticResource Field}">
+                        <Entry Placeholder="https://www.amazon.com/..."
                            Text="{Binding ScrapeUrl}" />
+                    </Border>
                     <HorizontalStackLayout Spacing="8">
                         <Button Text="{Binding IsScraping, Converter={StaticResource BusyTextConverter}, ConverterParameter='Scraping...|Scrape URL'}"
                                 Command="{Binding ScrapeCommand}"
@@ -33,43 +37,57 @@
                                 IsVisible="{OnPlatform WinUI=True, Default=False}" />
                     </HorizontalStackLayout>
                 </VerticalStackLayout>
-            </Frame>
+            </controls:PopCard>
 
             <!-- Item fields -->
-            <Label Text="Name" FontAttributes="Bold" />
-            <Entry Placeholder="Item name" Text="{Binding Name}" />
+            <Label Text="Name" FontFamily="DisplayBold" />
+            <Border Style="{StaticResource Field}">
+                <Entry Placeholder="Item name" Text="{Binding Name}" />
+            </Border>
 
-            <Label Text="Description" FontAttributes="Bold" />
-            <Editor Placeholder="Description (optional)" Text="{Binding Description}"
+            <Label Text="Description" FontFamily="DisplayBold" />
+            <Border Style="{StaticResource Field}">
+                <Editor Placeholder="Description (optional)" Text="{Binding Description}"
                     HeightRequest="80" />
+            </Border>
 
-            <Label Text="Price" FontAttributes="Bold" />
-            <Entry Placeholder="0.00" Text="{Binding PriceText}" Keyboard="Numeric" />
+            <Label Text="Price" FontFamily="DisplayBold" />
+            <Border Style="{StaticResource Field}">
+                <Entry Placeholder="0.00" Text="{Binding PriceText}" Keyboard="Numeric" />
+            </Border>
 
-            <Label Text="Quantity" FontAttributes="Bold" />
-            <Entry Placeholder="1" Text="{Binding QuantityDesired}" Keyboard="Numeric" />
+            <Label Text="Quantity" FontFamily="DisplayBold" />
+            <Border Style="{StaticResource Field}">
+                <Entry Placeholder="1" Text="{Binding QuantityDesired}" Keyboard="Numeric" />
+            </Border>
 
-            <Label Text="Image URL" FontAttributes="Bold" />
-            <Entry Placeholder="https://..." Text="{Binding ImageUrl}" />
+            <Label Text="Image URL" FontFamily="DisplayBold" />
+            <Border Style="{StaticResource Field}">
+                <Entry Placeholder="https://..." Text="{Binding ImageUrl}" />
+            </Border>
 
             <!-- Image preview -->
             <Image Source="{Binding ImageUrl}" HeightRequest="120" Aspect="AspectFit"
                    IsVisible="{Binding ImageUrl, Converter={StaticResource IsNotNullOrEmptyConverter}}" />
 
             <!-- Links -->
-            <Label Text="Store Links" FontAttributes="Bold" FontSize="16" />
+            <Label Text="Store Links" FontFamily="DisplayBold" FontSize="16" />
             <CollectionView ItemsSource="{Binding Links}">
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:ItemLink">
-                        <HorizontalStackLayout Spacing="8" Padding="0,4">
-                            <Entry Placeholder="URL" Text="{Binding Url}" HorizontalOptions="FillAndExpand" />
-                            <Entry Placeholder="Store" Text="{Binding StoreName}" WidthRequest="100" />
-                            <Button Text="X"
+                        <Grid ColumnDefinitions="*,110,Auto" ColumnSpacing="8" Padding="0,4">
+                            <Border Style="{StaticResource Field}" Grid.Column="0">
+                                <Entry Placeholder="URL" Text="{Binding Url}" />
+                            </Border>
+                            <Border Style="{StaticResource Field}" Grid.Column="1">
+                                <Entry Placeholder="Store" Text="{Binding StoreName}" />
+                            </Border>
+                            <Button Grid.Column="2" Text="✕"
                                     Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ItemFormViewModel}}, Path=RemoveLinkCommand}"
                                     CommandParameter="{Binding}"
                                     Style="{StaticResource DangerButton}"
-                                    HeightRequest="36" WidthRequest="36" Padding="0" />
-                        </HorizontalStackLayout>
+                                    HeightRequest="40" WidthRequest="40" Padding="0" />
+                        </Grid>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>

@@ -3,61 +3,70 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:WishList.ViewModels"
              xmlns:models="clr-namespace:WishList.Models"
+             xmlns:controls="clr-namespace:WishList.Controls"
              x:Class="WishList.Views.DashboardPage"
              x:DataType="vm:DashboardViewModel"
              Title="My Lists">
 
-    <Grid RowDefinitions="Auto,*">
+    <Grid RowDefinitions="Auto,*,Auto">
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Padding="16,16,16,4" ColumnSpacing="12">
+            <VerticalStackLayout Grid.Column="0" VerticalOptions="Center">
+                <Label Text="{Binding UserDisplayName, StringFormat='Welcome, {0}!'}" Style="{StaticResource H2}" />
+            </VerticalStackLayout>
+            <Button Grid.Column="1" Text="+ New List" Command="{Binding CreateListCommand}"
+                    Style="{StaticResource PrimaryButton}" HeightRequest="42" Padding="16,0" VerticalOptions="Center" />
+        </Grid>
 
-        <HorizontalStackLayout Grid.Row="0" Padding="16" Spacing="10">
-            <Label Text="{Binding UserDisplayName, StringFormat='Welcome, {0}!'}"
-                   FontSize="20" FontAttributes="Bold" VerticalOptions="Center" />
-            <Button Text="+ New List"
-                    Command="{Binding CreateListCommand}"
-                    Style="{StaticResource PrimaryButton}"
-                    HeightRequest="36" Padding="12,0"
-                    HorizontalOptions="EndAndExpand" />
-        </HorizontalStackLayout>
-
-        <RefreshView Grid.Row="1"
-                     IsRefreshing="{Binding IsRefreshing}"
-                     Command="{Binding LoadListsCommand}">
-            <CollectionView ItemsSource="{Binding Lists}"
-                            EmptyView="No wish lists yet. Tap '+ New List' to create one!">
+        <RefreshView Grid.Row="1" IsRefreshing="{Binding IsRefreshing}" Command="{Binding LoadListsCommand}">
+            <CollectionView ItemsSource="{Binding Lists}" Margin="8,4" controls:GridSpan.MinItemWidth="260">
+            <CollectionView.EmptyView>
+                <Border Style="{StaticResource EmptyBlock}" Margin="8">
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="🎁" FontSize="36" HorizontalTextAlignment="Center" />
+                        <Label Text="No wish lists yet. Tap '+ New List' to create one!" Style="{StaticResource Subtle}" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Border>
+            </CollectionView.EmptyView>
                 <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="models:WishListModel">
-                        <Frame Style="{StaticResource CardFrame}" Margin="16,4">
-                            <Frame.GestureRecognizers>
-                                <TapGestureRecognizer
-                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:DashboardViewModel}}, Path=OpenListCommand}"
-                                    CommandParameter="{Binding}" />
-                            </Frame.GestureRecognizers>
-                            <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
-                                <Label Grid.Row="0" Grid.Column="0"
-                                       Text="{Binding Title}"
-                                       FontSize="18" FontAttributes="Bold" />
-                                <Label Grid.Row="1" Grid.Column="0"
-                                       Text="{Binding Description}"
-                                       TextColor="Gray" LineBreakMode="TailTruncation" />
-                                <VerticalStackLayout Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
-                                                     VerticalOptions="Center" Spacing="4">
-                                    <Label Text="{Binding ItemCount, StringFormat='{0} items'}"
-                                           TextColor="Gray" FontSize="12" HorizontalOptions="End" />
-                                    <Button Text="Delete"
-                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:DashboardViewModel}}, Path=DeleteListCommand}"
-                                            CommandParameter="{Binding}"
-                                            Style="{StaticResource DangerButton}"
-                                            HeightRequest="30" Padding="8,0" FontSize="12" />
-                                </VerticalStackLayout>
+                <DataTemplate x:DataType="models:WishListModel">
+                    <controls:PopCard InnerPadding="0" Margin="10">
+                        <controls:PopCard.GestureRecognizers>
+                            <TapGestureRecognizer
+                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:DashboardViewModel}}, Path=OpenListCommand}"
+                                CommandParameter="{Binding}" />
+                        </controls:PopCard.GestureRecognizers>
+                        <VerticalStackLayout Spacing="0">
+                            <!-- Colored header band with the list name -->
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" Padding="14,14" MinimumHeightRequest="64"
+                                  BackgroundColor="{Binding ListColorHex, Converter={StaticResource HexToColor}}">
+                                <Label Grid.Column="0" Text="{Binding Title}" FontFamily="DisplayBold" FontSize="18"
+                                       TextColor="{StaticResource OnColor}" VerticalOptions="Center" LineBreakMode="WordWrap" />
+                                <Label Grid.Column="1" Text="🎁" FontSize="24" VerticalOptions="Center" />
                             </Grid>
-                        </Frame>
-                    </DataTemplate>
+                            <BoxView HeightRequest="2.5" />
+                            <VerticalStackLayout Spacing="6" Padding="14,10,14,14">
+                                <Label Text="{Binding Description}" Style="{StaticResource Subtle}" MaxLines="2"
+                                       LineBreakMode="TailTruncation" IsVisible="{Binding HasDescription}" />
+                                    <Border Style="{StaticResource Pill}" BackgroundColor="{StaticResource Highlight}"
+                                            IsVisible="{Binding HasItemCount}">
+                                        <Label Text="{Binding ItemCount, StringFormat='{0} items'}" FontFamily="DisplayBold"
+                                               FontSize="11" TextColor="{StaticResource OnColor}" />
+                                    </Border>
+                                    <Button Text="Delete" Style="{StaticResource SmallButton}" HorizontalOptions="Start"
+                                            BackgroundColor="{StaticResource Danger}" TextColor="{StaticResource OnColor}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:DashboardViewModel}}, Path=DeleteListCommand}"
+                                            CommandParameter="{Binding}" />
+                            </VerticalStackLayout>
+                        </VerticalStackLayout>
+                    </controls:PopCard>
+                </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
         </RefreshView>
 
-        <Label Grid.Row="1" Text="{Binding ErrorMessage}" TextColor="Red"
-               IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}"
-               Margin="16,0" />
+        <Border Grid.Row="2" Style="{StaticResource ErrorBlock}" Margin="16,0,16,12"
+                IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}">
+            <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorText}" />
+        </Border>
     </Grid>
 </ContentPage>

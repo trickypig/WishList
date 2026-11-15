@@ -3,31 +3,53 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:WishList.ViewModels"
              xmlns:models="clr-namespace:WishList.Models"
+             xmlns:controls="clr-namespace:WishList.Controls"
              x:Class="WishList.Views.FamilyListsPage"
              x:DataType="vm:FamilyListsViewModel"
              Title="{Binding FamilyName, StringFormat='{0} - Lists'}">
 
-    <RefreshView IsRefreshing="{Binding IsRefreshing}"
-                 Command="{Binding LoadListsCommand}">
-        <CollectionView ItemsSource="{Binding Lists}"
-                        EmptyView="No lists shared with this family yet.">
-            <CollectionView.ItemTemplate>
+    <Grid RowDefinitions="Auto,*">
+        <VerticalStackLayout Grid.Row="0" Padding="16,16,16,4">
+            <Label Text="Wish lists shared with this family" Style="{StaticResource Subtle}" />
+        </VerticalStackLayout>
+        <RefreshView Grid.Row="1" IsRefreshing="{Binding IsRefreshing}" Command="{Binding LoadListsCommand}">
+            <CollectionView ItemsSource="{Binding Lists}" Margin="8,4" controls:GridSpan.MinItemWidth="260">
+            <CollectionView.EmptyView>
+                <Border Style="{StaticResource EmptyBlock}" Margin="8">
+                    <VerticalStackLayout Spacing="6">
+                        <Label Text="🎁" FontSize="36" HorizontalTextAlignment="Center" />
+                        <Label Text="No lists shared with this family yet." Style="{StaticResource Subtle}" HorizontalTextAlignment="Center" />
+                    </VerticalStackLayout>
+                </Border>
+            </CollectionView.EmptyView>
+                <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="models:WishListModel">
-                    <Frame Style="{StaticResource CardFrame}" Margin="16,4">
-                        <Frame.GestureRecognizers>
+                    <controls:PopCard InnerPadding="0" Margin="10">
+                        <controls:PopCard.GestureRecognizers>
                             <TapGestureRecognizer
                                 Command="{Binding Source={RelativeSource AncestorType={x:Type vm:FamilyListsViewModel}}, Path=OpenListCommand}"
                                 CommandParameter="{Binding}" />
-                        </Frame.GestureRecognizers>
-                        <VerticalStackLayout>
-                            <Label Text="{Binding Title}" FontSize="18" FontAttributes="Bold" />
-                            <Label Text="{Binding OwnerName, StringFormat='by {0}'}" TextColor="Gray" FontSize="13" />
-                            <Label Text="{Binding Description}" TextColor="Gray" FontSize="12"
-                                   LineBreakMode="TailTruncation" />
+                        </controls:PopCard.GestureRecognizers>
+                        <VerticalStackLayout Spacing="0">
+                            <!-- Colored header band with the list name -->
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10" Padding="14,14" MinimumHeightRequest="64"
+                                  BackgroundColor="{Binding ListColorHex, Converter={StaticResource HexToColor}}">
+                                <Label Grid.Column="0" Text="{Binding Title}" FontFamily="DisplayBold" FontSize="18"
+                                       TextColor="{StaticResource OnColor}" VerticalOptions="Center" LineBreakMode="WordWrap" />
+                                <Label Grid.Column="1" Text="🎁" FontSize="24" VerticalOptions="Center" />
+                            </Grid>
+                            <BoxView HeightRequest="2.5" />
+                            <VerticalStackLayout Spacing="6" Padding="14,10,14,14">
+                                <Label Text="{Binding Description}" Style="{StaticResource Subtle}" MaxLines="2"
+                                       LineBreakMode="TailTruncation" IsVisible="{Binding HasDescription}" />
+                                    <Label Text="{Binding OwnerName, StringFormat='By {0}'}" Style="{StaticResource Subtle}"
+                                           FontFamily="DisplayMedium" FontSize="12" />
+                            </VerticalStackLayout>
                         </VerticalStackLayout>
-                    </Frame>
+                    </controls:PopCard>
                 </DataTemplate>
-            </CollectionView.ItemTemplate>
-        </CollectionView>
-    </RefreshView>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+    </Grid>
 </ContentPage>

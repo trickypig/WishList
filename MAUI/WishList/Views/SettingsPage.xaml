@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:WishList.Controls"
              xmlns:vm="clr-namespace:WishList.ViewModels"
              x:Class="WishList.Views.SettingsPage"
              x:DataType="vm:SettingsViewModel"
@@ -9,52 +10,60 @@
     <ScrollView>
         <VerticalStackLayout Spacing="16" Padding="16">
 
-            <Frame Style="{StaticResource CardFrame}">
+            <controls:PopCard>
                 <VerticalStackLayout Spacing="8">
-                    <Label Text="Profile" FontAttributes="Bold" FontSize="18" />
+                    <Label Text="Profile" FontFamily="DisplayBold" FontSize="18" />
 
                     <Grid ColumnDefinitions="100,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
-                        <Label Grid.Row="0" Grid.Column="0" Text="Name:" FontAttributes="Bold" />
+                        <Label Grid.Row="0" Grid.Column="0" Text="Name:" FontFamily="DisplayBold" />
                         <Label Grid.Row="0" Grid.Column="1" Text="{Binding DisplayName}" />
 
-                        <Label Grid.Row="1" Grid.Column="0" Text="Email:" FontAttributes="Bold" />
+                        <Label Grid.Row="1" Grid.Column="0" Text="Email:" FontFamily="DisplayBold" />
                         <Label Grid.Row="1" Grid.Column="1" Text="{Binding Email}" />
 
-                        <Label Grid.Row="2" Grid.Column="0" Text="Admin:" FontAttributes="Bold" />
+                        <Label Grid.Row="2" Grid.Column="0" Text="Admin:" FontFamily="DisplayBold" />
                         <Label Grid.Row="2" Grid.Column="1" Text="{Binding IsAdmin}" />
 
-                        <Label Grid.Row="3" Grid.Column="0" Text="Child:" FontAttributes="Bold" />
+                        <Label Grid.Row="3" Grid.Column="0" Text="Child:" FontFamily="DisplayBold" />
                         <Label Grid.Row="3" Grid.Column="1" Text="{Binding IsChild}" />
                     </Grid>
                 </VerticalStackLayout>
-            </Frame>
+            </controls:PopCard>
 
-            <Frame Style="{StaticResource CardFrame}">
+            <controls:PopCard>
                 <VerticalStackLayout Spacing="12">
-                    <Label Text="Change Password" FontAttributes="Bold" FontSize="18" />
+                    <Label Text="Change Password" FontFamily="DisplayBold" FontSize="18" />
 
-                    <Label Text="{Binding PasswordMessage}"
-                           IsVisible="{Binding PasswordMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}"
-                           TextColor="{Binding IsPasswordError, Converter={StaticResource BoolToColorConverter}}" />
+                    <Border Style="{StaticResource ErrorBlock}"
+                            BackgroundColor="{Binding IsPasswordError, Converter={StaticResource BoolToColorConverter}}"
+                            IsVisible="{Binding PasswordMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}">
+                        <Label Text="{Binding PasswordMessage}" Style="{StaticResource ErrorText}" />
+                    </Border>
 
-                    <Entry Placeholder="Current Password"
+                    <Border Style="{StaticResource Field}">
+                        <Entry Placeholder="Current Password"
                            Text="{Binding CurrentPassword}"
                            IsPassword="True" />
+                    </Border>
 
-                    <Entry Placeholder="New Password"
+                    <Border Style="{StaticResource Field}">
+                        <Entry Placeholder="New Password"
                            Text="{Binding NewPassword}"
                            IsPassword="True" />
+                    </Border>
 
-                    <Entry Placeholder="Confirm New Password"
+                    <Border Style="{StaticResource Field}">
+                        <Entry Placeholder="Confirm New Password"
                            Text="{Binding ConfirmPassword}"
                            IsPassword="True" />
+                    </Border>
 
                     <Button Text="{Binding IsChangingPassword, Converter={StaticResource BusyTextConverter}, ConverterParameter='Updating...|Update Password'}"
                             Command="{Binding ChangePasswordCommand}"
                             IsEnabled="{Binding IsChangingPassword, Converter={StaticResource InvertedBoolConverter}}"
                             Style="{StaticResource PrimaryButton}" />
                 </VerticalStackLayout>
-            </Frame>
+            </controls:PopCard>
 
             <Button Text="Logout"
                     Command="{Binding LogoutCommand}"

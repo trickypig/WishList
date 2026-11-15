@@ -18,6 +18,8 @@
     <Compile Include="../WishList/Helpers/BoldPop.cs" Link="Shared/BoldPop.cs" />
     <Compile Include="../WishList/Models/Item.cs" Link="Shared/Item.cs" />
     <Compile Include="../WishList/Models/ItemLink.cs" Link="Shared/ItemLink.cs" />
+    <Compile Include="../WishList/Models/WishListModel.cs" Link="Shared/WishListModel.cs" />
+    <Compile Include="../WishList/Models/ItemGroup.cs" Link="Shared/ItemGroup.cs" />
   </ItemGroup>
 
 </Project>

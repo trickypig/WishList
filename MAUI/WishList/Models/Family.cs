@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using WishList.Helpers;
 
 namespace WishList.Models;
 
@@ -29,4 +30,8 @@ public class Family
     public List<FamilyMember>? Members { get; set; }
 
     public string EffectiveRole => Role ?? MyRole ?? "member";
+
+    /// <summary>Stripe color for the family card, from the shared Bold Pop palette.</summary>
+    [JsonIgnore]
+    public string ColorHex => BoldPop.TileHexAt(Id);
 }

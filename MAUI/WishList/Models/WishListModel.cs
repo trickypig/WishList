@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using WishList.Helpers;
 
 namespace WishList.Models;
 
@@ -39,4 +40,14 @@ public class WishListModel
 
     [JsonPropertyName("item_count")]
     public int? ItemCount { get; set; }
+
+    /// <summary>The list's own Bold Pop color: same on its card, its hero and the website.</summary>
+    [JsonIgnore]
+    public string ListColorHex => BoldPop.ListColorHex(Id);
+
+    [JsonIgnore]
+    public bool HasItemCount => ItemCount is not null;
+
+    [JsonIgnore]
+    public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
 }

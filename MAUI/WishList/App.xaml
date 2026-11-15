@@ -58,6 +58,16 @@
                 <Setter Property="MinimumHeightRequest" Value="30" />
             </Style>
 
+            <!-- Text-only link button -->
+            <Style x:Key="LinkButton" TargetType="Button">
+                <Setter Property="BackgroundColor" Value="Transparent" />
+                <Setter Property="BorderWidth" Value="0" />
+                <Setter Property="TextColor" Value="{AppThemeBinding Light={StaticResource InkLight}, Dark={StaticResource InkDark}}" />
+                <Setter Property="FontFamily" Value="DisplayBold" />
+                <Setter Property="FontSize" Value="14" />
+                <Setter Property="Padding" Value="6,4" />
+            </Style>
+
             <!-- Legacy card style: flat outlined look (PopCard is preferred) -->
             <Style x:Key="CardFrame" TargetType="Frame">
                 <Setter Property="BackgroundColor" Value="{AppThemeBinding Light={StaticResource SurfaceLight}, Dark={StaticResource SurfaceDark}}" />

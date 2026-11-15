@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:WishList.Controls"
              xmlns:vm="clr-namespace:WishList.ViewModels"
              xmlns:models="clr-namespace:WishList.Models"
              x:Class="WishList.Views.FamiliesPage"
@@ -9,7 +10,7 @@
 
     <Grid RowDefinitions="Auto,*">
 
-        <HorizontalStackLayout Grid.Row="0" Padding="16" Spacing="10">
+        <HorizontalStackLayout Grid.Row="0" Padding="16,16,16,4" Spacing="10">
             <Button Text="+ Create Family"
                     Command="{Binding CreateFamilyCommand}"
                     Style="{StaticResource PrimaryButton}"
@@ -27,34 +28,38 @@
                             EmptyView="No families yet. Create or join one!">
                 <CollectionView.ItemTemplate>
                     <DataTemplate x:DataType="models:Family">
-                        <Frame Style="{StaticResource CardFrame}" Margin="16,4">
-                            <Grid ColumnDefinitions="*,Auto">
+                        <controls:PopCard Margin="16,8" InnerPadding="0">
+                            <VerticalStackLayout Spacing="0">
+                            <BoxView HeightRequest="12" Color="{Binding ColorHex, Converter={StaticResource HexToColor}}" />
+                            <BoxView HeightRequest="2.5" />
+                            <Grid ColumnDefinitions="*,Auto" Padding="16,12,16,14">
                                 <VerticalStackLayout Grid.Column="0">
                                     <VerticalStackLayout.GestureRecognizers>
                                         <TapGestureRecognizer
                                             Command="{Binding Source={RelativeSource AncestorType={x:Type vm:FamiliesViewModel}}, Path=OpenFamilyCommand}"
                                             CommandParameter="{Binding}" />
                                     </VerticalStackLayout.GestureRecognizers>
-                                    <Label Text="{Binding Name}" FontSize="18" FontAttributes="Bold" />
+                                    <Label Text="{Binding Name}" FontSize="18" FontFamily="DisplayBold" />
                                     <Label Text="{Binding MemberCount, StringFormat='{0} members'}"
-                                           TextColor="Gray" FontSize="13" />
-                                    <Label Text="{Binding EffectiveRole, StringFormat='Role: {0}'}"
-                                           TextColor="Gray" FontSize="12" />
+                                           TextColor="{AppThemeBinding Light={StaticResource SubtleLight}, Dark={StaticResource SubtleDark}}" FontSize="13" />
+                                    <Border Style="{StaticResource Pill}" BackgroundColor="{StaticResource Highlight}" Margin="0,6,0,0">
+                                        <Label Text="{Binding EffectiveRole}" FontFamily="DisplayBold" FontSize="10" TextColor="{StaticResource OnColor}" />
+                                    </Border>
                                 </VerticalStackLayout>
                                 <Button Grid.Column="1" Text="View Lists"
                                         Command="{Binding Source={RelativeSource AncestorType={x:Type vm:FamiliesViewModel}}, Path=ViewFamilyListsCommand}"
                                         CommandParameter="{Binding}"
-                                        Style="{StaticResource OutlineButton}"
-                                        HeightRequest="30" Padding="8,0" FontSize="11"
+                                        Style="{StaticResource SmallButton}"
                                         VerticalOptions="Center" />
                             </Grid>
-                        </Frame>
+                            </VerticalStackLayout>
+                        </controls:PopCard>
                     </DataTemplate>
                 </CollectionView.ItemTemplate>
             </CollectionView>
         </RefreshView>
 
-        <Label Grid.Row="1" Text="{Binding ErrorMessage}" TextColor="Red"
+        <Label Grid.Row="1" Text="{Binding ErrorMessage}" TextColor="{StaticResource Danger}"
                IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}"
                Margin="16,0" />
     </Grid>

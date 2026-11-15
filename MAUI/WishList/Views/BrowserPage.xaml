@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:controls="clr-namespace:WishList.Controls"
              xmlns:vm="clr-namespace:WishList.ViewModels"
              xmlns:models="clr-namespace:WishList.Models"
              x:Class="WishList.Views.BrowserPage"
@@ -10,12 +11,12 @@
     <Grid RowDefinitions="Auto,*,Auto">
 
         <!-- Top bar -->
-        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Padding="8" BackgroundColor="{StaticResource Primary}">
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Padding="8" BackgroundColor="{StaticResource Accent}">
             <Button Grid.Column="0" Text="Back"
                     Command="{Binding BackToQuickLaunchCommand}"
                     IsVisible="{Binding ShowBrowser}"
-                    BackgroundColor="Transparent" TextColor="White" />
-            <Label Grid.Column="1" Text="{Binding CurrentUrl}" TextColor="White"
+                    Style="{StaticResource SmallButton}" />
+            <Label Grid.Column="1" Text="{Binding CurrentUrl}" TextColor="{StaticResource OnColor}"
                    VerticalOptions="Center" LineBreakMode="TailTruncation"
                    Margin="8,0" FontSize="12" />
             <Button Grid.Column="2"
@@ -23,36 +24,35 @@
                     Command="{Binding CaptureItemCommand}"
                     IsEnabled="{Binding IsScraping, Converter={StaticResource InvertedBoolConverter}}"
                     IsVisible="{Binding ShowBrowser}"
-                    BackgroundColor="#28a745" TextColor="White"
-                    FontAttributes="Bold" Padding="12,0" />
+                    Style="{StaticResource PrimaryButton}" HeightRequest="38" Padding="14,0" />
         </Grid>
 
         <!-- Quick launch grid -->
         <ScrollView Grid.Row="1" IsVisible="{Binding ShowQuickLaunch}">
             <VerticalStackLayout Padding="16" Spacing="8">
-                <Label Text="Choose a shopping site" FontSize="20" FontAttributes="Bold"
+                <Label Text="Choose a shopping site" FontSize="20" FontFamily="DisplayBold"
                        HorizontalOptions="Center" Margin="0,16" />
-                <Label Text="{Binding ErrorMessage}" TextColor="Red"
-                       IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}"
-                       HorizontalOptions="Center" />
+                <Border Style="{StaticResource ErrorBlock}" IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}">
+                    <Label Text="{Binding ErrorMessage}" Style="{StaticResource ErrorText}" />
+                </Border>
                 <FlexLayout Wrap="Wrap" JustifyContent="Center" AlignItems="Start"
                             BindableLayout.ItemsSource="{Binding AllowedDomains}">
                     <BindableLayout.ItemTemplate>
                         <DataTemplate x:DataType="models:AllowedDomain">
-                            <Frame Style="{StaticResource CardFrame}" Margin="6"
+                            <controls:PopCard Margin="6"
                                    WidthRequest="140" HeightRequest="80">
-                                <Frame.GestureRecognizers>
+                                <controls:PopCard.GestureRecognizers>
                                     <TapGestureRecognizer
                                         Command="{Binding Source={RelativeSource AncestorType={x:Type vm:BrowserViewModel}}, Path=OpenSiteCommand}"
                                         CommandParameter="{Binding}" />
-                                </Frame.GestureRecognizers>
+                                </controls:PopCard.GestureRecognizers>
                                 <VerticalStackLayout VerticalOptions="Center" HorizontalOptions="Center">
-                                    <Label Text="{Binding DisplayName}" FontAttributes="Bold"
+                                    <Label Text="{Binding DisplayName}" FontFamily="DisplayBold"
                                            HorizontalOptions="Center" FontSize="14" />
-                                    <Label Text="{Binding Domain}" TextColor="Gray"
+                                    <Label Text="{Binding Domain}" TextColor="{AppThemeBinding Light={StaticResource SubtleLight}, Dark={StaticResource SubtleDark}}"
                                            HorizontalOptions="Center" FontSize="11" />
                                 </VerticalStackLayout>
-                            </Frame>
+                            </controls:PopCard>
                         </DataTemplate>
                     </BindableLayout.ItemTemplate>
                 </FlexLayout>
@@ -67,8 +67,8 @@
                  Navigated="OnWebViewNavigated" />
 
         <!-- Error bar -->
-        <Label Grid.Row="2" Text="{Binding ErrorMessage}" TextColor="Red"
+        <Label Grid.Row="2" Text="{Binding ErrorMessage}" TextColor="{StaticResource Danger}"
                IsVisible="{Binding ErrorMessage, Converter={StaticResource IsNotNullOrEmptyConverter}}"
-               Padding="8" BackgroundColor="#fff3cd" />
+               Padding="8" />
     </Grid>
 </ContentPage>
