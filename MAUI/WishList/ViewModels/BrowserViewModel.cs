@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
+using WishList.Helpers;
 using WishList.Models;
 using WishList.Services;
 
@@ -57,29 +58,11 @@ public partial class BrowserViewModel : ObservableObject
     {
         try
         {
-            // Get domains from all user's families (union)
-            var families = await _apiService.GetFamiliesAsync();
-            var allDomains = new Dictionary<string, AllowedDomain>();
-
-            foreach (var family in families)
-            {
-                var domains = await _apiService.GetFamilyDomainsAsync(family.Id);
-                foreach (var d in domains)
-                {
-                    allDomains.TryAdd(d.Domain, d);
-                }
-            }
-
+            var domains = await _apiService.GetAllowedDomainsAsync();
             AllowedDomains.Clear();
-            _allowedDomainSet.Clear();
-            var byName = allDomains.Values.OrderBy(
-                d => string.IsNullOrWhiteSpace(d.DisplayName) ? d.Domain : d.DisplayName,
-                StringComparer.CurrentCultureIgnoreCase);
-            foreach (var d in byName)
-            {
+            foreach (var d in domains)
                 AllowedDomains.Add(d);
-                _allowedDomainSet.Add(d.Domain.ToLowerInvariant());
-            }
+            _allowedDomainSet = AllowedSites.ToSet(domains.Select(d => d.Domain));
         }
         catch (Exception ex)
         {
@@ -90,22 +73,7 @@ public partial class BrowserViewModel : ObservableObject
     /// <summary>
     /// Check if a URL's domain is in the allowed list.
     /// </summary>
-    public bool IsDomainAllowed(string url)
-    {
-        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
-            return false;
-
-        var host = uri.Host.ToLowerInvariant();
-
-        // Check exact match and parent domain matches (e.g., www.amazon.com matches amazon.com)
-        foreach (var allowed in _allowedDomainSet)
-        {
-            if (host == allowed || host.EndsWith("." + allowed))
-                return true;
-        }
-
-        return false;
-    }
+    public bool IsDomainAllowed(string url) => AllowedSites.IsAllowed(url, _allowedDomainSet);
 
     [RelayCommand]
     private void OpenSite(AllowedDomain domain)

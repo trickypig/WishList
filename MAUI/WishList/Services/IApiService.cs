@@ -41,6 +41,8 @@ public interface IApiService
 
     // Domains
     Task<List<AllowedDomain>> GetFamilyDomainsAsync(int familyId);
+    /// <summary>Every site any of the user's families allows, once each, sorted by name.</summary>
+    Task<List<AllowedDomain>> GetAllowedDomainsAsync();
     Task AddFamilyDomainAsync(int familyId, string domain, string displayName);
     Task RemoveFamilyDomainAsync(int familyId, string domain);
 

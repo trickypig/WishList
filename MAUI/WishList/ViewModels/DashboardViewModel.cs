@@ -11,13 +11,16 @@ public partial class DashboardViewModel : ObservableObject
     private readonly IApiService _apiService;
     private readonly IAuthService _authService;
 
-    public ObservableCollection<WishListModel> Lists { get; } = [];
+    /// <summary>Your lists first, then one section per family with the lists its members share.</summary>
+    /// <remarks>
+    /// Replaced whole on every load, never edited in place: WinUI's grouped list crashes
+    /// the app (0xc000027b) when its groups are cleared and re-added while it's showing.
+    /// </remarks>
+    [ObservableProperty]
+    private IReadOnlyList<ListSection> _sections = [];
 
     [ObservableProperty]
     private bool _isRefreshing;
-
-    [ObservableProperty]
-    private bool _isEmpty;
 
     [ObservableProperty]
     private string _errorMessage = string.Empty;
@@ -36,11 +39,17 @@ public partial class DashboardViewModel : ObservableObject
         ErrorMessage = string.Empty;
         try
         {
-            var lists = await _apiService.GetListsAsync();
-            Lists.Clear();
-            foreach (var list in lists)
-                Lists.Add(list);
-            IsEmpty = Lists.Count == 0;
+            var mineTask = _apiService.GetListsAsync();
+            var familiesTask = _apiService.GetFamiliesAsync();
+            await Task.WhenAll(mineTask, familiesTask);
+            var mine = mineTask.Result;
+            var families = familiesTask.Result;
+            var familyLists = await Task.WhenAll(families.Select(f => _apiService.GetFamilyListsAsync(f.Id)));
+
+            var sections = new List<ListSection> { new("My Lists", string.Empty, true, mine) };
+            for (var i = 0; i < families.Count; i++)
+                sections.Add(new ListSection(families[i].Name, "Lists shared with this family", false, familyLists[i]));
+            Sections = sections;
         }
         catch (Exception ex)
         {
@@ -78,14 +87,14 @@ public partial class DashboardViewModel : ObservableObject
     [RelayCommand]
     private async Task DeleteListAsync(WishListModel list)
     {
+        if (!list.IsMine) return;
         var confirm = await Shell.Current.DisplayAlert("Delete List", $"Delete \"{list.Title}\"?", "Delete", "Cancel");
         if (!confirm) return;
 
         try
         {
             await _apiService.DeleteListAsync(list.Id);
-            Lists.Remove(list);
-            IsEmpty = Lists.Count == 0;
+            await LoadListsAsync();
         }
         catch (Exception ex)
         {

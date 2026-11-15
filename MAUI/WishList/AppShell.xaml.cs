@@ -13,6 +13,7 @@ public partial class AppShell : Shell
         Routing.RegisterRoute("itemForm", typeof(ItemFormPage));
         Routing.RegisterRoute("familyDetail", typeof(FamilyDetailPage));
         Routing.RegisterRoute("familyLists", typeof(FamilyListsPage));
+        Routing.RegisterRoute("siteViewer", typeof(SiteViewerPage));
 
 #if WINDOWS
         Routing.RegisterRoute("browser", typeof(BrowserPage));

@@ -261,6 +261,21 @@ public class ApiService : IApiService
         return result.GetProperty("domains").Deserialize<List<AllowedDomain>>() ?? [];
     }
 
+    public async Task<List<AllowedDomain>> GetAllowedDomainsAsync()
+    {
+        var families = await GetFamiliesAsync();
+        var perFamily = await Task.WhenAll(families.Select(f => GetFamilyDomainsAsync(f.Id)));
+
+        var byDomain = new Dictionary<string, AllowedDomain>(StringComparer.OrdinalIgnoreCase);
+        foreach (var d in perFamily.SelectMany(list => list))
+            byDomain.TryAdd(d.Domain, d);
+
+        return byDomain.Values
+            .OrderBy(d => string.IsNullOrWhiteSpace(d.DisplayName) ? d.Domain : d.DisplayName,
+                     StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+    }
+
     public async Task AddFamilyDomainAsync(int familyId, string domain, string displayName)
     {
         await PostAsync($"/families/{familyId}/domains", new { domain, display_name = displayName });

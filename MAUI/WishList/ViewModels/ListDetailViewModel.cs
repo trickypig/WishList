@@ -75,6 +75,9 @@ public partial class ListDetailViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(EmptyMessage))]
     private bool _showPurchased;
 
+    /// <summary>Adults can mark things on someone else's list as bought; child accounts can only look.</summary>
+    private bool CanBuy => !IsOwner && (_authService.CurrentUser?.IsChild ?? 0) == 0;
+
     public string EmptyMessage =>
         !IsOwner && !ShowPurchased && _allItems.Count > 0
             ? "Everything on this list has been purchased."
@@ -100,7 +103,8 @@ public partial class ListDetailViewModel : ObservableObject
             item.CanEdit = item.IsSuggestion ? item.SuggestedBy == userId : IsOwner;
             item.CanDelete = IsOwner || (item.IsSuggestion && item.SuggestedBy == userId);
             item.CanReorder = IsOwner && !item.IsSuggestion;
-            item.CanPurchase = !IsOwner && !item.IsFullyPurchased && !item.HasMyPurchase;
+            item.CanPurchase = CanBuy && !item.IsFullyPurchased && !item.HasMyPurchase;
+            item.CanUndoPurchase = CanBuy && item.HasMyPurchase;
             item.ShowPurchaseState = !IsOwner;
         }
         var visible = _allItems.Where(i => IsOwner || ShowPurchased || !i.IsFullyPurchased).ToList();
@@ -367,11 +371,9 @@ public partial class ListDetailViewModel : ObservableObject
     [RelayCommand]
     private async Task PurchaseItemAsync(Item item)
     {
+        if (!item.CanPurchase) return;
         try
         {
-            var remaining = item.QuantityDesired - (item.TotalPurchased ?? 0);
-            if (remaining <= 0) return;
-
             await _apiService.PurchaseItemAsync(item.Id, 1);
             await LoadListAsync();
         }
@@ -384,6 +386,7 @@ public partial class ListDetailViewModel : ObservableObject
     [RelayCommand]
     private async Task UnpurchaseItemAsync(Item item)
     {
+        if (!item.CanUndoPurchase) return;
         try
         {
             await _apiService.UnpurchaseItemAsync(item.Id);
@@ -393,6 +396,19 @@ public partial class ListDetailViewModel : ObservableObject
         {
             ErrorMessage = ex.Message;
         }
+    }
+
+    /// <summary>Opens a store link in the in-app, look-only site viewer.</summary>
+    [RelayCommand]
+    private async Task OpenLinkAsync(ItemLink link)
+    {
+        if (!link.CanOpen) return;
+        var name = _allItems.Concat(_suggestions).FirstOrDefault(i => i.Links.Contains(link))?.Name ?? link.Label;
+        await Shell.Current.GoToAsync("siteViewer", new Dictionary<string, object>
+        {
+            ["url"] = link.Url,
+            ["name"] = name,
+        });
     }
 
     [RelayCommand]

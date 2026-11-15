@@ -37,6 +37,7 @@ public static class MauiProgram
         builder.Services.AddTransient<FamilyDetailViewModel>();
         builder.Services.AddTransient<FamilyListsViewModel>();
         builder.Services.AddTransient<SettingsViewModel>();
+        builder.Services.AddTransient<SiteViewerViewModel>();
 
         // Pages
         builder.Services.AddTransient<LoginPage>();
@@ -49,6 +50,7 @@ public static class MauiProgram
         builder.Services.AddTransient<FamilyDetailPage>();
         builder.Services.AddTransient<FamilyListsPage>();
         builder.Services.AddTransient<SettingsPage>();
+        builder.Services.AddTransient<SiteViewerPage>();
 
 #if WINDOWS
         builder.Services.AddTransient<BrowserViewModel>();

@@ -218,7 +218,7 @@
                                                                            TextColor="{StaticResource OnColor}" />
                                                                 </Border>
 
-                                                                <!-- Family member actions -->
+                                                                <!-- Buying: adults only; child accounts just see what's taken -->
                                                                 <Button Text="I'll get this" Style="{StaticResource PrimaryButton}" HeightRequest="38" FontSize="13"
                                                                         Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=PurchaseItemCommand}"
                                                                         CommandParameter="{Binding}"
@@ -226,7 +226,21 @@
                                                                 <Button Text="Undo" Style="{StaticResource SmallButton}" HorizontalOptions="Start"
                                                                         Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=UnpurchaseItemCommand}"
                                                                         CommandParameter="{Binding}"
-                                                                        IsVisible="{Binding ShowMyBadge}" />
+                                                                        IsVisible="{Binding CanUndoPurchase}" />
+
+                                                                <!-- Store links: open in the look-only site viewer -->
+                                                                <FlexLayout Wrap="Wrap" AlignItems="Center" IsVisible="{Binding HasLinks}"
+                                                                            BindableLayout.ItemsSource="{Binding OpenableLinks}">
+                                                                    <BindableLayout.ItemTemplate>
+                                                                        <DataTemplate x:DataType="models:ItemLink">
+                                                                            <Button Text="{Binding Label, StringFormat='🛍 {0}'}" Style="{StaticResource SmallButton}"
+                                                                                    Margin="0,0,4,4" LineBreakMode="TailTruncation" MaximumWidthRequest="170"
+                                                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ListDetailViewModel}}, Path=OpenLinkCommand}"
+                                                                                    CommandParameter="{Binding}" />
+                                                                        </DataTemplate>
+                                                                    </BindableLayout.ItemTemplate>
+                                                                </FlexLayout>
+
                                                                 <Border StrokeThickness="2" StrokeDashArray="3,2" StrokeShape="RoundRectangle 9"
                                                                         Padding="8,7" IsVisible="{Binding IsClaimedByOthers}">
                                                                     <Label Text="Claimed ✓" FontFamily="DisplayBold" FontSize="13"

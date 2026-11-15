@@ -16,10 +16,12 @@
   <!-- Plain C# files shared with the app; the MAUI project itself is not referenced -->
   <ItemGroup>
     <Compile Include="../WishList/Helpers/BoldPop.cs" Link="Shared/BoldPop.cs" />
+    <Compile Include="../WishList/Helpers/AllowedSites.cs" Link="Shared/AllowedSites.cs" />
     <Compile Include="../WishList/Models/Item.cs" Link="Shared/Item.cs" />
     <Compile Include="../WishList/Models/ItemLink.cs" Link="Shared/ItemLink.cs" />
     <Compile Include="../WishList/Models/WishListModel.cs" Link="Shared/WishListModel.cs" />
     <Compile Include="../WishList/Models/ItemGroup.cs" Link="Shared/ItemGroup.cs" />
+    <Compile Include="../WishList/Models/ListSection.cs" Link="Shared/ListSection.cs" />
   </ItemGroup>
 
 </Project>

@@ -53,4 +53,11 @@ public class WishListModel
 
     [JsonIgnore]
     public bool HasDescription => !string.IsNullOrWhiteSpace(Description);
+
+    /// <summary>Set by the Lists tab: your own lists can be deleted, others show who they belong to.</summary>
+    [JsonIgnore]
+    public bool IsMine { get; set; }
+
+    [JsonIgnore]
+    public bool ShowOwnerName => !IsMine && !string.IsNullOrWhiteSpace(OwnerName);
 }

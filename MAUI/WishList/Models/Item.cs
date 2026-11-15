@@ -59,8 +59,13 @@ public class Item : INotifyPropertyChanged
     [JsonIgnore]
     public bool CanReorder { get; set; }
 
+    /// <summary>"I'll get this": adults on someone else's list, while some are still wanted.</summary>
     [JsonIgnore]
     public bool CanPurchase { get; set; }
+
+    /// <summary>"Undo": adults who marked this as bought themselves.</summary>
+    [JsonIgnore]
+    public bool CanUndoPurchase { get; set; }
 
     [JsonIgnore]
     public bool HasMyPurchase => PurchasedByMe > 0;
@@ -71,6 +76,13 @@ public class Item : INotifyPropertyChanged
 
     [JsonPropertyName("links")]
     public List<ItemLink> Links { get; set; } = [];
+
+    /// <summary>The store links that can open in the site viewer.</summary>
+    [JsonIgnore]
+    public List<ItemLink> OpenableLinks => Links.Where(l => l.CanOpen).ToList();
+
+    [JsonIgnore]
+    public bool HasLinks => Links.Any(l => l.CanOpen);
 
     [JsonPropertyName("total_purchased")]
     public int? TotalPurchased { get; set; }

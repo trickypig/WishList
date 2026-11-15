@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:WishList.ViewModels"
+             x:Class="WishList.Views.SiteViewerPage"
+             x:DataType="vm:SiteViewerViewModel"
+             Title="{Binding ItemName}">
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- Top bar: back within the site, where you are, and done. No address bar. -->
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="8" Padding="8"
+              BackgroundColor="{StaticResource Accent}">
+            <Button Grid.Column="0" x:Name="BackButton" Text="◀ Back" Clicked="OnBackClicked"
+                    Style="{StaticResource SmallButton}" IsEnabled="False" />
+            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                <Label Text="Just looking 👀" FontFamily="DisplayBold" FontSize="13"
+                       TextColor="{StaticResource OnColor}" />
+                <Label Text="{Binding CurrentHost}" FontSize="11" LineBreakMode="TailTruncation"
+                       TextColor="{StaticResource OnColor}" />
+            </VerticalStackLayout>
+            <Button Grid.Column="2" Text="Done" Command="{Binding CloseCommand}"
+                    Style="{StaticResource PrimaryButton}" HeightRequest="38" Padding="16,0" />
+        </Grid>
+
+        <Border Grid.Row="1" Style="{StaticResource ErrorBlock}" Margin="8,8,8,0"
+                IsVisible="{Binding Notice, Converter={StaticResource IsNotNullOrEmptyConverter}}">
+            <Label Text="{Binding Notice}" Style="{StaticResource ErrorText}" />
+        </Border>
+
+        <WebView Grid.Row="2" x:Name="Viewer"
+                 Source="{Binding CurrentUrl}"
+                 IsVisible="{Binding IsBlocked, Converter={StaticResource InvertedBoolConverter}}"
+                 Navigating="OnNavigating"
+                 Navigated="OnNavigated" />
+
+        <ActivityIndicator Grid.Row="2" IsRunning="{Binding IsLoading}" IsVisible="{Binding IsLoading}"
+                           HorizontalOptions="Center" VerticalOptions="Center" />
+
+        <!-- The link's own site isn't allowed -->
+        <Border Grid.Row="2" Style="{StaticResource EmptyBlock}" Margin="24" VerticalOptions="Center"
+                IsVisible="{Binding IsBlocked}">
+            <VerticalStackLayout Spacing="8">
+                <Label Text="🚧" FontSize="40" HorizontalTextAlignment="Center" />
+                <Label Text="This store isn't one of your family's allowed sites."
+                       FontFamily="DisplayBold" FontSize="16" HorizontalTextAlignment="Center" />
+                <Label Text="{Binding CurrentHost}" Style="{StaticResource Subtle}" HorizontalTextAlignment="Center" />
+                <Label Text="Ask a parent to add it in your family's settings."
+                       Style="{StaticResource Subtle}" HorizontalTextAlignment="Center" />
+            </VerticalStackLayout>
+        </Border>
+    </Grid>
+</ContentPage>

@@ -37,3 +37,32 @@ public class ItemCountTextTests
         Assert.Equal("6 items", new WishListModel { ItemCount = 6 }.ItemCountText);
     }
 }
+
+public class ListSectionTests
+{
+    [Fact]
+    public void Own_lists_can_be_deleted_and_hide_the_owner()
+    {
+        var list = new WishListModel { OwnerName = "Sam" };
+        new ListSection("My Lists", "", true, [list]);
+        Assert.True(list.IsMine);
+        Assert.False(list.ShowOwnerName);
+    }
+
+    [Fact]
+    public void Family_lists_show_who_they_belong_to()
+    {
+        var list = new WishListModel { OwnerName = "Grandma" };
+        var section = new ListSection("The Smiths", "Lists shared with this family", false, [list]);
+        Assert.False(list.IsMine);
+        Assert.True(list.ShowOwnerName);
+        Assert.False(section.IsEmptySection);
+    }
+
+    [Fact]
+    public void Empty_sections_say_why()
+    {
+        Assert.Contains("New List", new ListSection("My Lists", "", true, []).EmptyText);
+        Assert.Contains("shared", new ListSection("Fam", "", false, []).EmptyText);
+    }
+}

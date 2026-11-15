@@ -6,7 +6,7 @@
              xmlns:controls="clr-namespace:WishList.Controls"
              x:Class="WishList.Views.DashboardPage"
              x:DataType="vm:DashboardViewModel"
-             Title="My Lists">
+             Title="Lists">
 
     <Grid RowDefinitions="Auto,*,Auto">
         <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Padding="16,16,16,4" ColumnSpacing="12">
@@ -18,15 +18,26 @@
         </Grid>
 
         <RefreshView Grid.Row="1" IsRefreshing="{Binding IsRefreshing}" Command="{Binding LoadListsCommand}">
-            <CollectionView ItemsSource="{Binding Lists}" Margin="8,4" controls:GridSpan.MinItemWidth="260">
-            <CollectionView.EmptyView>
-                <Border Style="{StaticResource EmptyBlock}" Margin="8">
-                    <VerticalStackLayout Spacing="6">
-                        <Label Text="🎁" FontSize="36" HorizontalTextAlignment="Center" />
-                        <Label Text="No wish lists yet. Tap '+ New List' to create one!" Style="{StaticResource Subtle}" HorizontalTextAlignment="Center" />
-                    </VerticalStackLayout>
-                </Border>
-            </CollectionView.EmptyView>
+            <CollectionView ItemsSource="{Binding Sections}" IsGrouped="True" Margin="8,4" controls:GridSpan.MinItemWidth="260">
+                <CollectionView.GroupHeaderTemplate>
+                    <DataTemplate x:DataType="models:ListSection">
+                        <VerticalStackLayout Padding="10,18,10,2" Spacing="2">
+                            <Label Text="{Binding Title}" Style="{StaticResource H2}" />
+                            <Label Text="{Binding Subtitle}" Style="{StaticResource Subtle}"
+                                   IsVisible="{Binding IsMine, Converter={StaticResource InvertedBoolConverter}}" />
+                        </VerticalStackLayout>
+                    </DataTemplate>
+                </CollectionView.GroupHeaderTemplate>
+                <CollectionView.GroupFooterTemplate>
+                    <DataTemplate x:DataType="models:ListSection">
+                        <Border Style="{StaticResource EmptyBlock}" Margin="10" IsVisible="{Binding IsEmptySection}">
+                            <VerticalStackLayout Spacing="6">
+                                <Label Text="🎁" FontSize="30" HorizontalTextAlignment="Center" />
+                                <Label Text="{Binding EmptyText}" Style="{StaticResource Subtle}" HorizontalTextAlignment="Center" />
+                            </VerticalStackLayout>
+                        </Border>
+                    </DataTemplate>
+                </CollectionView.GroupFooterTemplate>
                 <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="models:WishListModel">
                     <controls:PopCard InnerPadding="0" Margin="10">
@@ -52,7 +63,10 @@
                                         <Label Text="{Binding ItemCountText}" FontFamily="DisplayBold"
                                                FontSize="11" TextColor="{StaticResource OnColor}" />
                                     </Border>
+                                    <Label Text="{Binding OwnerName, StringFormat='By {0}'}" Style="{StaticResource Subtle}"
+                                           FontFamily="DisplayMedium" FontSize="12" IsVisible="{Binding ShowOwnerName}" />
                                     <Button Text="Delete" Style="{StaticResource SmallButton}" HorizontalOptions="Start"
+                                            IsVisible="{Binding IsMine}"
                                             BackgroundColor="{StaticResource Danger}" TextColor="{StaticResource OnColor}"
                                             Command="{Binding Source={RelativeSource AncestorType={x:Type vm:DashboardViewModel}}, Path=DeleteListCommand}"
                                             CommandParameter="{Binding}" />
