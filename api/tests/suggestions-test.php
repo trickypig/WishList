@@ -114,6 +114,14 @@ check('owner reveal never returns purchase details', !isset($revealed['suggestio
 $member = callRoute($db, 3, 'GET', '/lists/{id}', ['id' => 1])->data['list'];
 check('members see purchase counts on suggestions', (int) $member['suggestions'][0]['total_purchased'] === 1
     && (int) $member['suggestions'][0]['purchased_by_me'] === 1);
+check('members see who claimed suggestions', ($member['suggestions'][0]['purchaser_names'] ?? null) === ['Sam']);
+check('owner reveal excludes claimant names', !isset($revealed['suggestions'][0]['purchaser_names']));
+Purchase::mark($db, $official, 2);
+$claimedList = callRoute($db, 3, 'GET', '/lists/{id}', ['id' => 1])->data['list'];
+check('members see who claimed official wishes', ($claimedList['items'][0]['purchaser_names'] ?? null) === ['Alex']);
+$ownerList = callRoute($db, 1, 'GET', '/lists/{id}', ['id' => 1])->data['list'];
+check('official claimant names stay hidden from owner', !isset($ownerList['items'][0]['purchaser_names']));
+Purchase::unmark($db, $official, 2);
 check('owner cannot learn purchase state via undo endpoint', callRoute($db, 1, 'DELETE', '/items/{itemId}/purchase', ['itemId' => $suggestion])->status === 403);
 
 check('author can edit their suggestion', callRoute($db, 2, 'PUT', '/items/{id}', ['id' => $suggestion,

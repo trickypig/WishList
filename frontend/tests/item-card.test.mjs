@@ -64,6 +64,19 @@ test('fully purchased by others shows Claimed and stripes', () => {
   assert.doesNotMatch(html, /ll get this/);
 });
 
+test('fully claimed items identify the people getting them', () => {
+  for (const names of [['Bob'], ['Bob', 'Sam']]) {
+    const html = render({ item: { ...other, total_purchased: 2, purchased_by_me: 0, purchaser_names: names }, isOwner: false });
+    assert.ok(html.includes(`Claimed by ${names.join(', ')}`));
+    assert.doesNotMatch(html, /ll get this/);
+  }
+});
+
+test('claimant names stay hidden from the list owner', () => {
+  const html = render({ item: { ...other, total_purchased: 2, purchased_by_me: 0, purchaser_names: ['Bob'] }, isOwner: true });
+  assert.doesNotMatch(html, /Bob|Claimed|taken|item-card-purchased/);
+});
+
 test('partly purchased by others is still available', () => {
   const html = render({ item: { ...other, quantity_desired: 3, total_purchased: 1, purchased_by_me: 0 }, isOwner: false, canEdit: false, canDelete: false });
   assert.match(html, /ll get this/);

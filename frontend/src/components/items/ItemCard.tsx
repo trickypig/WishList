@@ -134,7 +134,9 @@ export default function ItemCard({
               </button>
             )}
             {fullyPurchased && purchasedByMe === 0 && (
-              <span className="btn btn-sm btn-claimed">Claimed ✓</span>
+              <span className="btn btn-sm btn-claimed">
+                {item.purchaser_names?.length ? `Claimed by ${item.purchaser_names.join(', ')}` : 'Claimed'} ✓
+              </span>
             )}
             {purchasedByMe > 0 && (
               <button className="btn btn-sm btn-outline" onClick={() => onUnpurchase?.(item)}>

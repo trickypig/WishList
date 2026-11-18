@@ -81,12 +81,14 @@ function registerListRoutes(Router $router, PDO $db): void
                 $purchaseInfo = Purchase::getPurchaseInfo($db, $item['id'], $user['id']);
                 $item['total_purchased'] = $purchaseInfo['total_purchased'];
                 $item['purchased_by_me'] = $purchaseInfo['purchased_by_me'];
+                $item['purchaser_names'] = $purchaseInfo['purchaser_names'];
             }
             unset($item);
             foreach ($suggestions as &$suggestion) {
                 $purchaseInfo = Purchase::getPurchaseInfo($db, $suggestion['id'], $user['id']);
                 $suggestion['total_purchased'] = $purchaseInfo['total_purchased'];
                 $suggestion['purchased_by_me'] = $purchaseInfo['purchased_by_me'];
+                $suggestion['purchaser_names'] = $purchaseInfo['purchaser_names'];
             }
             unset($suggestion);
         }

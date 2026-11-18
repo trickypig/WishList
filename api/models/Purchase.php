@@ -60,9 +60,19 @@ class Purchase
         $stmt->execute(['item_id' => $itemId, 'user_id' => $requesterId]);
         $purchasedByMe = (int) $stmt->fetchColumn();
 
+        $stmt = $db->prepare(
+            'SELECT DISTINCT u.id, u.display_name FROM purchases p
+             JOIN users u ON u.id = p.user_id
+             WHERE p.item_id = :item_id AND p.quantity > 0
+             ORDER BY u.display_name, u.id'
+        );
+        $stmt->execute(['item_id' => $itemId]);
+        $purchaserNames = array_column($stmt->fetchAll(), 'display_name');
+
         return [
             'total_purchased' => $total,
             'purchased_by_me' => $purchasedByMe,
+            'purchaser_names' => $purchaserNames,
         ];
     }
 }

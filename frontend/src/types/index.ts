@@ -83,6 +83,7 @@ export interface Item {
   links: ItemLink[];
   total_purchased?: number;
   purchased_by_me?: number;
+  purchaser_names?: string[];
 }
 
 export interface Family {
