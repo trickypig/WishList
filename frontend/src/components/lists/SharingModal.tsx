@@ -11,7 +11,7 @@ interface SharingModalProps {
 }
 
 export default function SharingModal({ listId, currentVisibility, currentFamilyIds, onClose, onSaved }: SharingModalProps) {
-  const [visibility, setVisibility] = useState(currentVisibility);
+  const [visibility, setVisibility] = useState(currentVisibility === 'specific_families' ? 'selected_families' : currentVisibility);
   const [familyIds, setFamilyIds] = useState<number[]>(currentFamilyIds);
   const [families, setFamilies] = useState<Family[]>([]);
   const [saving, setSaving] = useState(false);
@@ -34,7 +34,7 @@ export default function SharingModal({ listId, currentVisibility, currentFamilyI
     try {
       await updateListSharing(listId, {
         visibility,
-        family_ids: visibility === 'specific_families' ? familyIds : [],
+        family_ids: visibility === 'selected_families' ? familyIds : [],
       });
       onSaved();
     } catch (err: unknown) {
@@ -78,15 +78,15 @@ export default function SharingModal({ listId, currentVisibility, currentFamilyI
               <input
                 type="radio"
                 name="visibility"
-                value="specific_families"
-                checked={visibility === 'specific_families'}
-                onChange={() => setVisibility('specific_families')}
+                value="selected_families"
+                checked={visibility === 'selected_families'}
+                onChange={() => setVisibility('selected_families')}
               />
               <span>Specific Families &mdash; Choose which families can see this</span>
             </label>
           </div>
 
-          {visibility === 'specific_families' && (
+          {visibility === 'selected_families' && (
             <div className="form-group">
               <label>Select Families</label>
               {families.length === 0 ? (

@@ -87,6 +87,10 @@ class WishList
 
     public static function updateSharing(PDO $db, int $id, string $visibility, array $familyIds = []): void
     {
+        // Accept the value sent by older web clients; storage uses selected_families.
+        if ($visibility === 'specific_families') {
+            $visibility = 'selected_families';
+        }
         $db->prepare('UPDATE wish_lists SET visibility = :visibility, updated_at = :updated_at WHERE id = :id')
             ->execute([
                 'visibility' => $visibility,

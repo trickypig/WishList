@@ -61,6 +61,16 @@ function registerListRoutes(Router $router, PDO $db): void
 
         $items = Item::getByListId($db, $listId);
         $isOwner = (int) $list['user_id'] === (int) $user['id'];
+        if ($isOwner) {
+            $shares = $db->prepare(
+                'SELECT f.id, f.name FROM families f
+                 JOIN list_family_shares s ON s.family_id = f.id
+                 WHERE s.list_id = :list_id ORDER BY f.name, f.id'
+            );
+            $shares->execute(['list_id' => $listId]);
+            $list['shared_families'] = $shares->fetchAll();
+            $list['family_ids'] = array_map(fn($family) => (int) $family['id'], $list['shared_families']);
+        }
         // Never send suggestion contents to the owner until explicitly requested.
         $suggestions = (!$isOwner || ($_GET['include_suggestions'] ?? '') === '1')
             ? Item::getByListId($db, $listId, true) : [];

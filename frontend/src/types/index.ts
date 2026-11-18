@@ -41,13 +41,14 @@ export interface WishList {
   user_id: number;
   title: string;
   description: string;
-  visibility: 'private' | 'all_families' | 'specific_families';
+  visibility: 'private' | 'all_families' | 'selected_families' | 'specific_families';
   owner_name?: string;
   created_at: string;
   items?: Item[];
   suggestions?: Item[];
   groups?: ItemGroup[];
   family_ids?: number[];
+  shared_families?: Pick<Family, 'id' | 'name'>[];
   /** Sent on list summaries (your lists, a family's lists) in place of the items. */
   item_count?: number;
 }

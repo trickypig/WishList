@@ -39,7 +39,7 @@ export default function DashboardPage() {
     setCreating(true);
     setError('');
     try {
-      const res = await createList({ title, description, visibility: 'private' });
+      const res = await createList({ title, description, visibility: 'all_families' });
       setLists([res.list, ...lists]);
       setTitle('');
       setDescription('');

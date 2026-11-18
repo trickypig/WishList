@@ -813,6 +813,14 @@ img {
   gap: 0.5rem;
 }
 
+.list-sharing-summary {
+  align-self: center;
+  margin-left: auto;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  font-size: 0.875rem;
+}
+
 .title-input {
   font-size: 1.6rem;
   font-weight: 700;

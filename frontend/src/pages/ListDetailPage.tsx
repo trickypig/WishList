@@ -549,6 +549,13 @@ function ListDetail() {
                 <button className="btn btn-sm btn-outline" onClick={() => setEditingTitle(true)}>Edit</button>
                 <button className="btn btn-sm btn-outline" onClick={() => setShowSharing(true)}>Sharing</button>
                 <button className="btn btn-sm btn-danger" onClick={handleDeleteList}>Delete List</button>
+                <span className="list-sharing-summary" role="status">
+                  {list.visibility === 'private'
+                    ? 'Private — Only you'
+                    : list.visibility === 'all_families'
+                      ? 'Shared with: All families'
+                      : `Shared with: ${list.shared_families?.map(family => family.name).join(', ') || 'No families'}`}
+                </span>
               </div>
             )}
           </div>

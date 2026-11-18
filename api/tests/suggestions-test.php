@@ -60,6 +60,8 @@ $db = new PDO('sqlite::memory:', null, null, [PDO::ATTR_ERRMODE => PDO::ERRMODE_
 $db->exec("CREATE TABLE users (id INTEGER PRIMARY KEY, display_name TEXT);
     INSERT INTO users VALUES (1, 'Owner'), (2, 'Alex'), (3, 'Sam'), (4, 'Outsider');
     CREATE TABLE family_members (family_id INTEGER, user_id INTEGER);
+    CREATE TABLE families (id INTEGER PRIMARY KEY, name TEXT);
+    INSERT INTO families VALUES (1, 'Close family'), (2, 'Extended family');
     INSERT INTO family_members VALUES (1,1), (1,2), (1,3), (2,1), (2,4);
     CREATE TABLE wish_lists (id INTEGER PRIMARY KEY, user_id INTEGER, title TEXT, description TEXT, visibility TEXT, updated_at TEXT);
     INSERT INTO wish_lists VALUES (1,1,'Birthday','','all_families',''), (2,1,'Private','','private',''), (3,1,'Selected','','selected_families','');
@@ -85,6 +87,16 @@ check('server assigns attribution, ignoring spoofed author and official group',
     (int) $r->data['item']['suggested_by'] === 2 && $r->data['item']['group_id'] === null);
 
 $owner = callRoute($db, 1, 'GET', '/lists/{id}', ['id' => 1])->data['list'];
+$selected = callRoute($db, 1, 'GET', '/lists/{id}', ['id' => 3])->data['list'];
+check('owner receives selected sharing family names and ids',
+    ($selected['family_ids'] ?? null) === [1]
+    && ($selected['shared_families'] ?? null) === [['id' => 1, 'name' => 'Close family']]);
+check('viewers do not receive owner sharing details', !isset(callRoute($db, 2, 'GET', '/lists/{id}', ['id' => 3])->data['list']['shared_families']));
+callRoute($db, 1, 'PUT', '/lists/{id}/sharing', ['id' => 3,
+    '_body' => ['visibility' => 'specific_families', 'family_ids' => [1]]]);
+check('web selected sharing value preserves family access',
+    WishList::canAccess($db, WishList::getById($db, 3), 2)
+    && !WishList::canAccess($db, WishList::getById($db, 3), 4));
 check('owner receives only official items by default', count($owner['items']) === 1 && (int) $owner['items'][0]['id'] === $official
     && empty($owner['suggestions']) && !str_contains(json_encode($owner), 'Suggested book'));
 $member = callRoute($db, 3, 'GET', '/lists/{id}', ['id' => 1])->data['list'];
