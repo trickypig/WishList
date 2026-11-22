@@ -11,6 +11,7 @@ namespace WishList.ViewModels;
 /// </summary>
 [QueryProperty(nameof(StartUrl), "url")]
 [QueryProperty(nameof(ItemName), "name")]
+[QueryProperty(nameof(TrustLink), "trustLink")]
 public partial class SiteViewerViewModel : ObservableObject
 {
     private readonly IApiService _apiService;
@@ -21,6 +22,13 @@ public partial class SiteViewerViewModel : ObservableObject
 
     [ObservableProperty]
     private string _itemName = string.Empty;
+
+    /// <summary>
+    /// The link was added by someone else, so its own site may be browsed even when it
+    /// isn't one of the family's allowed sites. Other sites stay blocked.
+    /// </summary>
+    [ObservableProperty]
+    private bool _trustLink;
 
     /// <summary>What the WebView shows; only ever set to an allowed page.</summary>
     [ObservableProperty]
@@ -61,6 +69,9 @@ public partial class SiteViewerViewModel : ObservableObject
         {
             Notice = ex.Message;
         }
+
+        if (TrustLink && AllowedSites.IsWebUrl(StartUrl))
+            _allowed.UnionWith(AllowedSites.ToSet([AllowedSites.HostOf(StartUrl)]));
 
         ShownUrl = StartUrl;
         if (IsAllowed(StartUrl))

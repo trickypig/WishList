@@ -85,6 +85,13 @@ public partial class ListDetailViewModel : ObservableObject
 
     partial void OnShowPurchasedChanged(bool value) => ApplyFilter();
 
+    /// <summary>
+    /// Items fully bought by other people are hidden unless "show purchased" is on;
+    /// anything you bought yourself always stays visible so you can see or undo it.
+    /// </summary>
+    private bool IsShown(Item item) =>
+        IsOwner || ShowPurchased || !item.IsFullyPurchased || item.HasMyPurchase;
+
     [RelayCommand]
     private void ToggleShowPurchased() => ShowPurchased = !ShowPurchased;
 
@@ -107,7 +114,7 @@ public partial class ListDetailViewModel : ObservableObject
             item.CanUndoPurchase = CanBuy && item.HasMyPurchase;
             item.ShowPurchaseState = !IsOwner;
         }
-        var visible = _allItems.Where(i => IsOwner || ShowPurchased || !i.IsFullyPurchased).ToList();
+        var visible = _allItems.Where(IsShown).ToList();
 
         // Empty sections are only worth showing to the owner, as somewhere to drop items
         var ungrouped = visible.Where(i => SectionOf(i) == null).ToList();
@@ -123,7 +130,7 @@ public partial class ListDetailViewModel : ObservableObject
 
         if (!IsOwner || (ShowSuggestions && !SuggestionsLoading))
         {
-            var suggestions = _suggestions.Where(i => IsOwner || ShowPurchased || !i.IsFullyPurchased).ToList();
+            var suggestions = _suggestions.Where(IsShown).ToList();
             Sections.Add(new ItemSection(null, suggestions, true, isSuggestions: true));
         }
 
@@ -403,11 +410,16 @@ public partial class ListDetailViewModel : ObservableObject
     private async Task OpenLinkAsync(ItemLink link)
     {
         if (!link.CanOpen) return;
-        var name = _allItems.Concat(_suggestions).FirstOrDefault(i => i.Links.Contains(link))?.Name ?? link.Label;
+        var item = _allItems.Concat(_suggestions).FirstOrDefault(i => i.Links.Contains(link));
+        // Someone else put this link on the item, so its site opens even if it isn't on the allow list
+        var addedByOther = item != null && (item.IsSuggestion
+            ? item.SuggestedBy != _authService.CurrentUser?.Id
+            : !IsOwner);
         await Shell.Current.GoToAsync("siteViewer", new Dictionary<string, object>
         {
             ["url"] = link.Url,
-            ["name"] = name,
+            ["name"] = item?.Name ?? link.Label,
+            ["trustLink"] = addedByOther,
         });
     }
 
