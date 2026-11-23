@@ -47,6 +47,17 @@ check('structured data beats displayed prices',
     extractPrice('<span class="price">$1.00</span><script type="application/ld+json">{"@type":"Product","offers":{"price":"99.00"}}</script>') === 99.00);
 check('returns nothing when no price exists', extractPrice('<p>Hello</p>') === null);
 
+echo "Amazon hosts\n";
+check('amazon.com is Amazon', isAmazonHost('www.amazon.com'));
+check('amazon.co.uk is Amazon', isAmazonHost('amazon.co.uk'));
+check('a.co short link is Amazon', isAmazonHost('a.co'));
+check('amzn.to short link is Amazon', isAmazonHost('amzn.to'));
+check('amzn.eu short link is Amazon', isAmazonHost('amzn.eu'));
+check('notamazon.co is not Amazon', !isAmazonHost('notamazon.co'));
+check('etsy.com is not Amazon', !isAmazonHost('www.etsy.com'));
+$r = extractProductInfo('<title>Amazon.com: Cozy Throw</title>', 'https://www.amazon.com/dp/B0TEST');
+check('final Amazon URL is reported', $r['url'] === 'https://www.amazon.com/dp/B0TEST');
+
 echo "Whole page extraction\n";
 $url = 'https://www.homedepot.com/p/widget/123';
 $html = '<html><head>

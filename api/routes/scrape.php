@@ -34,10 +34,10 @@ function registerScrapeRoutes(Router $router, PDO $db): void
             Response::error('Only HTTP/HTTPS URLs are allowed');
         }
 
-        $isAmazon = (bool) preg_match('/amazon\.(com|co\.uk|ca|de|fr|it|es|co\.jp|com\.au|in)$/i', $host);
-
-        $fetchResult = fetchUrl($url, $isAmazon);
+        $fetchResult = fetchUrl($url, isAmazonHost($host));
         $html = $fetchResult['html'];
+        // Short links (a.co, amzn.to, ...) redirect to the real product page; describe that page
+        $finalUrl = $fetchResult['final_url'] ?: $url;
         $httpCode = $fetchResult['http_code'];
 
         if ($html === false) {
@@ -55,7 +55,7 @@ function registerScrapeRoutes(Router $router, PDO $db): void
             Response::error('This store blocked the request', 422);
         }
 
-        $result = extractProductInfo($html, $url);
+        $result = extractProductInfo($html, $finalUrl);
 
         // Log successful scrape
         logScrape(
@@ -130,6 +130,18 @@ function detectBlockedPage(string $html, ?int $httpCode): ?string
     return null;
 }
 
+/**
+ * Whether a host is an Amazon store or one of Amazon's short-link hosts (a.co, amzn.to, ...).
+ */
+function isAmazonHost(string $host): bool
+{
+    $host = strtolower(rtrim($host, '.'));
+    if (preg_match('/^(www\.)?(a\.co|amzn\.to|amzn\.eu|amzn\.asia)$/', $host)) {
+        return true;
+    }
+    return (bool) preg_match('/(^|\.)amazon\.(com|co\.uk|ca|de|fr|it|es|co\.jp|com\.au|in)$/', $host);
+}
+
 function extractProductInfo(string $html, string $url): array
 {
     $host = strtolower(parse_url($url, PHP_URL_HOST) ?? '');
@@ -143,7 +155,7 @@ function extractProductInfo(string $html, string $url): array
     ];
 
     // Use site-specific extractors first, then generic fallbacks
-    if (preg_match('/amazon\.(com|co\.uk|ca|de|fr|it|es|co\.jp|com\.au|in)$/i', $host)) {
+    if (isAmazonHost($host)) {
         $result = array_merge($result, extractAmazon($html, $url));
     } elseif (preg_match('/ebay\.(com|co\.uk|de|fr|it|es|com\.au)$/i', $host)) {
         $result = array_merge($result, extractEbay($html, $url));
@@ -219,7 +231,7 @@ function stripStoreName(string $name): string
 
 function fetchUrl(string $url, bool $isAmazon = false): array
 {
-    $result = ['html' => false, 'http_code' => null, 'error' => ''];
+    $result = ['html' => false, 'http_code' => null, 'error' => '', 'final_url' => $url];
 
     // Build headers that look more like a real browser
     $headers = [
@@ -266,6 +278,7 @@ function fetchUrl(string $url, bool $isAmazon = false): array
         curl_setopt_array($ch, $opts);
         $html = curl_exec($ch);
         $result['http_code'] = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $result['final_url'] = (string) (curl_getinfo($ch, CURLINFO_EFFECTIVE_URL) ?: $url);
 
         if ($html === false || $html === '') {
             $result['error'] = curl_error($ch) ?: 'Empty response';
