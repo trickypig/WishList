@@ -147,7 +147,9 @@ public class ApiService : IApiService
             quantity_desired = item.QuantityDesired,
             image_url = item.ImageUrl,
             sort_order = item.SortOrder,
-            links = item.Links.Select(l => new { url = l.Url, store_name = l.StoreName }).ToList()
+            links = item.Links.Select(l => new { url = l.Url, store_name = l.StoreName }).ToList(),
+            // Server moves the item when this differs from its current list
+            list_id = item.ListId > 0 ? item.ListId : (int?)null
         });
         return result.GetProperty("item").Deserialize<Item>()!;
     }

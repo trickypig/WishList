@@ -1,9 +1,11 @@
 import { useState, type FormEvent } from 'react';
-import type { Item, ItemLink } from '../../types';
+import type { Item, ItemLink, WishList } from '../../types';
 
 interface ItemFormProps {
   initial?: Item;
   submitLabel?: string;
+  /** Lists the item can be moved to; the picker shows only when there is more than one. */
+  moveLists?: Pick<WishList, 'id' | 'title'>[];
   prefill?: {
     name?: string;
     price?: number | null;
@@ -17,11 +19,13 @@ interface ItemFormProps {
     quantity_desired: number;
     image_url: string;
     links: { url: string; store_name: string }[];
+    list_id?: number;
   }) => Promise<void>;
   onCancel: () => void;
 }
 
-export default function ItemForm({ initial, prefill, submitLabel, onSubmit, onCancel }: ItemFormProps) {
+export default function ItemForm({ initial, prefill, submitLabel, moveLists, onSubmit, onCancel }: ItemFormProps) {
+  const [listId, setListId] = useState(initial?.list_id ?? 0);
   const [name, setName] = useState(prefill?.name || initial?.name || '');
   const [description, setDescription] = useState(initial?.description || '');
   const [price, setPrice] = useState(
@@ -61,6 +65,7 @@ export default function ItemForm({ initial, prefill, submitLabel, onSubmit, onCa
         quantity_desired: parseInt(quantityDesired) || 1,
         image_url: imageUrl,
         links: links.filter((l) => l.url.trim() !== ''),
+        ...(initial && listId && listId !== initial.list_id ? { list_id: listId } : {}),
       });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to save item');
@@ -154,6 +159,19 @@ export default function ItemForm({ initial, prefill, submitLabel, onSubmit, onCa
           + Add Link
         </button>
       </div>
+      {initial && moveLists && moveLists.length > 1 && (
+        <div className="form-group">
+          <label htmlFor="item-list">List</label>
+          <select id="item-list" value={listId} onChange={(e) => setListId(Number(e.target.value))}>
+            {moveLists.map((l) => (
+              <option key={l.id} value={l.id}>{l.title}</option>
+            ))}
+          </select>
+          {listId !== initial.list_id && (
+            <small className="form-hint">Saving moves this item to the end of that list.</small>
+          )}
+        </div>
+      )}
       <div className="form-actions">
         <button type="button" className="btn btn-outline" onClick={onCancel}>Cancel</button>
         <button type="submit" className="btn btn-primary" disabled={submitting}>

@@ -126,6 +126,30 @@ class Item
         }
     }
 
+    /**
+     * Moves an item to the end of another list, outside any group (groups belong to their list).
+     * Purchases follow the item, so claims made on it are kept.
+     */
+    public static function moveToList(PDO $db, int $id, int $targetListId): void
+    {
+        $item = self::getById($db, $id);
+        if (!$item) {
+            return;
+        }
+        $stmt = $db->prepare('SELECT COALESCE(MAX(sort_order), 0) FROM items WHERE list_id = :list_id AND suggested_by IS NULL');
+        $stmt->execute(['list_id' => $targetListId]);
+        $sortOrder = (int) $stmt->fetchColumn() + 1;
+
+        $now = date('Y-m-d H:i:s');
+        $db->prepare(
+            'UPDATE items SET list_id = :list_id, group_id = NULL, sort_order = :sort_order, updated_at = :updated_at WHERE id = :id'
+        )->execute(['list_id' => $targetListId, 'sort_order' => $sortOrder, 'updated_at' => $now, 'id' => $id]);
+
+        $touch = $db->prepare('UPDATE wish_lists SET updated_at = :updated_at WHERE id = :id');
+        $touch->execute(['updated_at' => $now, 'id' => (int) $item['list_id']]);
+        $touch->execute(['updated_at' => $now, 'id' => $targetListId]);
+    }
+
     public static function reorder(PDO $db, int $listId, array $itemIds): void
     {
         $stmt = $db->prepare('UPDATE items SET sort_order = :sort_order WHERE id = :id AND list_id = :list_id AND suggested_by IS NULL');

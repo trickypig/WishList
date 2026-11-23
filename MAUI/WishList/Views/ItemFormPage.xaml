@@ -39,6 +39,18 @@
                 </VerticalStackLayout>
             </controls:PopCard>
 
+            <!-- Move to another of the owner's lists -->
+            <VerticalStackLayout Spacing="6" IsVisible="{Binding CanMove}">
+                <Label Text="List" FontFamily="DisplayBold" />
+                <Border Style="{StaticResource Field}">
+                    <Picker ItemsSource="{Binding MoveLists}"
+                            ItemDisplayBinding="{Binding Title, x:DataType=models:WishListModel}"
+                            SelectedItem="{Binding SelectedList}" />
+                </Border>
+                <Label Text="Saving moves this item to the end of that list."
+                       FontSize="12" Opacity="0.7" IsVisible="{Binding IsMoving}" />
+            </VerticalStackLayout>
+
             <!-- Item fields -->
             <Label Text="Name" FontFamily="DisplayBold" />
             <Border Style="{StaticResource Field}">

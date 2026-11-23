@@ -87,6 +87,21 @@ function registerItemRoutes(Router $router, PDO $db): void
             Response::error('Missing required fields: ' . implode(', ', $missing));
         }
 
+        // Optional move: the owner can send another of their own lists as list_id
+        $targetListId = isset($body['list_id']) ? (int) $body['list_id'] : (int) $item['list_id'];
+        if ($targetListId !== (int) $item['list_id']) {
+            if ($item['suggested_by'] !== null) {
+                Response::error('Suggestions cannot be moved to another list', 403);
+            }
+            $target = WishList::getById($db, $targetListId);
+            if (!$target) {
+                Response::notFound('Target list not found');
+            }
+            if ((int) $target['user_id'] !== (int) $user['id']) {
+                Response::error('You can only move items to your own lists', 403);
+            }
+        }
+
         Item::update(
             $db,
             $itemId,
@@ -98,6 +113,10 @@ function registerItemRoutes(Router $router, PDO $db): void
             (int) ($body['sort_order'] ?? $item['sort_order']),
             $body['links'] ?? []
         );
+
+        if ($targetListId !== (int) $item['list_id']) {
+            Item::moveToList($db, $itemId, $targetListId);
+        }
 
         $updated = Item::getById($db, $itemId);
         Response::json(['item' => $updated]);

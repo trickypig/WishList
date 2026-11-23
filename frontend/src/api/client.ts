@@ -131,6 +131,8 @@ export function updateItem(id: number, data: {
   image_url?: string;
   sort_order?: number;
   links?: { url: string; store_name: string }[];
+  /** Another of the owner's lists to move the item to */
+  list_id?: number;
 }) {
   return apiClient.put<{ item: Item }>(`/items/${id}`, data);
 }

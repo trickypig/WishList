@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef, type ClipboardEvent, type Dra
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import {
-  getList, updateList, deleteList, createItem, createSuggestion, updateItem,
+  getList, getLists, updateList, deleteList, createItem, createSuggestion, updateItem,
   deleteItem, arrangeItems, purchaseItem, unpurchaseItem, scrapeUrl,
   createGroup, updateGroup, deleteGroup,
 } from '../api/client';
@@ -53,6 +53,7 @@ function ListDetail() {
   const [description, setDescription] = useState('');
   const [showItemForm, setShowItemForm] = useState(false);
   const [editingItem, setEditingItem] = useState<Item | null>(null);
+  const [myLists, setMyLists] = useState<Pick<WishList, 'id' | 'title'>[]>([]);
   const [showSharing, setShowSharing] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [scraping, setScraping] = useState(false);
@@ -99,6 +100,16 @@ function ListDetail() {
   useEffect(() => {
     loadList();
   }, [loadList]);
+
+  // The owner's other lists, offered as move targets in the item editor
+  useEffect(() => {
+    if (!isOwner) return;
+    let cancelled = false;
+    getLists()
+      .then((res) => { if (!cancelled) setMyLists(res.lists.map(({ id, title }) => ({ id, title }))); })
+      .catch(() => { /* the editor just hides the list picker */ });
+    return () => { cancelled = true; };
+  }, [isOwner]);
 
   async function handleUpdateTitle() {
     if (!list) return;
@@ -228,6 +239,7 @@ function ListDetail() {
     name: string; description: string; price: number | null;
     quantity_desired: number; image_url: string;
     links: { url: string; store_name: string }[];
+    list_id?: number;
   }) {
     if (!editingItem) return;
     await updateItem(editingItem.id, data);
@@ -573,6 +585,7 @@ function ListDetail() {
             </div>
             <ItemForm
               initial={editingItem}
+              moveLists={isOwner && editingItem.suggested_by == null ? myLists : undefined}
               onSubmit={handleUpdateItem}
               onCancel={() => setEditingItem(null)}
             />

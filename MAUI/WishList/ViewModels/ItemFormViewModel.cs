@@ -55,6 +55,17 @@ public partial class ItemFormViewModel : ObservableObject
 
     public ObservableCollection<ItemLink> Links { get; } = [];
 
+    /// <summary>The owner's lists this item can be moved to; empty hides the picker.</summary>
+    public ObservableCollection<WishListModel> MoveLists { get; } = [];
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsMoving))]
+    private WishListModel? _selectedList;
+
+    public bool CanMove => MoveLists.Count > 1;
+
+    public bool IsMoving => SelectedList != null && SelectedList.Id != ListId;
+
     public string PageTitle => IsSuggestion ? (IsEditing ? "Edit Suggestion" : "Add Suggestion") : (IsEditing ? "Edit Item" : "Add Item");
 
     public ItemFormViewModel(IApiService apiService)
@@ -90,11 +101,28 @@ public partial class ItemFormViewModel : ObservableObject
             Links.Clear();
             foreach (var link in item.Links)
                 Links.Add(link);
+
+            if (!item.IsSuggestion)
+                await LoadMoveListsAsync();
         }
         catch (Exception ex)
         {
             ErrorMessage = ex.Message;
         }
+    }
+
+    private async Task LoadMoveListsAsync()
+    {
+        // GET /lists returns only the user's own lists, so finding this list there means they own it
+        var mine = await _apiService.GetListsAsync();
+        var current = mine.FirstOrDefault(l => l.Id == ListId);
+        if (current == null) return;
+
+        MoveLists.Clear();
+        foreach (var list in mine)
+            MoveLists.Add(list);
+        SelectedList = current;
+        OnPropertyChanged(nameof(CanMove));
     }
 
     [RelayCommand]
@@ -122,7 +150,8 @@ public partial class ItemFormViewModel : ObservableObject
                 Price = price,
                 QuantityDesired = QuantityDesired,
                 ImageUrl = ImageUrl,
-                Links = [.. Links]
+                Links = [.. Links],
+                ListId = IsMoving ? SelectedList!.Id : ListId
             };
 
             if (IsEditing)
