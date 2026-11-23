@@ -1,6 +1,6 @@
-# Add to Wish for Chrome
+# Trickypig Wish List for Chrome
 
-Open `chrome://extensions` in desktop Chrome, enable **Developer mode**, click **Load unpacked**, and choose this `extension` folder (the folder containing `manifest.json`). Pin **Add to Wish** from the Extensions menu.
+Open `chrome://extensions` in desktop Chrome, enable **Developer mode**, click **Load unpacked**, and choose this `extension` folder (the folder containing `manifest.json`). Pin **Trickypig Wish List** from the Extensions menu. Hover over its toolbar button to see **Add to Wish**.
 
 On a shopping page, click the extension and sign in with your existing Wish account. Review the product details, choose your wishlist, and click **Save**. Keep the popup open until the confirmation appears. Your last successful list is remembered for each account. If you have no lists, you can create one shared with all your families in the popup.
 

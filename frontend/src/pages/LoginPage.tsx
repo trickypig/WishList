@@ -79,6 +79,7 @@ export default function LoginPage() {
             <>Don't have an account? <Link to="/register">Create one</Link></>
           )}
         </p>
+        <p className="auth-footer"><a href="/privacy/">Privacy policy</a></p>
       </div>
     </div>
   );
