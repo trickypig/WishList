@@ -1,0 +1,32 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Add to Wish</title>
+<link rel="stylesheet" href="popup.css">
+</head>
+<body>
+<header><img src="wish.png" alt=""><h1>Add to Wish</h1><button id="logout" hidden>Sign out</button></header>
+<main>
+<p id="status" role="status">Reading page…</p>
+<form id="login" hidden>
+<label>Email<input id="email" type="email" autocomplete="username" required></label>
+<label>Password<input id="password" type="password" autocomplete="current-password" required></label>
+<button>Sign in to Wish</button>
+</form>
+<button id="retry" hidden>Reload wishlists</button>
+<form id="create" hidden>
+<label>First wishlist name<input id="listName" maxlength="255" required></label>
+<button>Create wishlist for all my families</button>
+</form>
+<form id="editor" hidden>
+<p id="source"></p>
+<label>Item name<input id="itemName" maxlength="255" required></label>
+<label>Price (optional)<input id="price" type="number" min="0" step="0.01"></label>
+<div id="photo" hidden><img id="preview" alt="Product preview" referrerpolicy="no-referrer"><button type="button" id="remove">Remove image</button></div>
+<label>Wishlist<select id="lists" required></select></label>
+<button id="save">Save</button>
+</form>
+</main>
+<script type="module" src="popup.js"></script>
+</body></html>

@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "Add to Wish",
+  "version": "1.0.0",
+  "description": "Save the product you are viewing to your Wish list.",
+  "icons": { "128": "wish.png" },
+  "action": { "default_title": "Add to Wish", "default_popup": "popup.html", "default_icon": "wish.png" },
+  "permissions": ["activeTab", "scripting", "storage"],
+  "host_permissions": ["https://wish.trickypig.com/*"]
+}
