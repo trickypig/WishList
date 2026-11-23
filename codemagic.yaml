@@ -12,7 +12,9 @@ workflows:
       app_store_connect: House Rules
     environment:
       # Reuse matching files stored under Team settings > Code signing identities.
-      # Codemagic installs the certificate/private key and profile before scripts run.
+      # Codemagic installs the certificate/private key and profiles before scripts run.
+      # The share extension (com.trickypig.wish.share) needs its own App Store profile
+      # uploaded there too; the next script stops with a clear message if it's missing.
       ios_signing:
         distribution_type: app_store
         bundle_identifier: com.trickypig.wish
@@ -52,22 +54,35 @@ workflows:
           dotnet workload install maui --version "$DOTNET_WORKLOAD_VERSION"
           dotnet --info
           dotnet workload --info
-      - name: Extract signing identity and profile name
+      - name: Extract signing identity and profile names
         script: |
           set -euo pipefail
-          # dotnet publish needs the certificate common name and the
-          # provisioning profile NAME (not UUID). Extract both and persist
-          # them to $CM_ENV so the next script can use them.
+          # dotnet publish needs the certificate common name and each bundle's
+          # provisioning profile NAME (not UUID): one for the app, one for the
+          # share extension. Persist them to $CM_ENV for the build script.
           CERT_NAME=$(keychain list-certificates \
             | jq -r '[.[] | select(.common_name | test("Distribution")) | .common_name][0] // empty')
           test -n "$CERT_NAME" || { echo "No distribution signing identity found." >&2; exit 1; }
-          PROFILE_PATH=$(find "$HOME/Library/MobileDevice/Provisioning Profiles" -name "*.mobileprovision" -print -quit)
-          test -n "$PROFILE_PATH" || { echo "No provisioning profile found." >&2; exit 1; }
-          PROFILE_NAME=$(security cms -D -i "$PROFILE_PATH" | plutil -extract Name raw -)
+          APP_PROFILE=""
+          SHARE_PROFILE=""
+          for PROFILE_PATH in "$HOME/Library/MobileDevice/Provisioning Profiles"/*.mobileprovision; do
+            [ -e "$PROFILE_PATH" ] || continue
+            PLIST=$(security cms -D -i "$PROFILE_PATH")
+            APP_IDENTIFIER=$(echo "$PLIST" | plutil -extract Entitlements.application-identifier raw -)
+            NAME=$(echo "$PLIST" | plutil -extract Name raw -)
+            case "$APP_IDENTIFIER" in
+              *".$BUNDLE_ID") APP_PROFILE="$NAME" ;;
+              *".$BUNDLE_ID.share") SHARE_PROFILE="$NAME" ;;
+            esac
+          done
+          test -n "$APP_PROFILE" || { echo "No provisioning profile found for $BUNDLE_ID." >&2; exit 1; }
+          test -n "$SHARE_PROFILE" || { echo "No provisioning profile found for $BUNDLE_ID.share (the share extension). Upload one under Team settings > Code signing identities." >&2; exit 1; }
           echo "Using certificate: $CERT_NAME"
-          echo "Using provisioning profile: $PROFILE_NAME"
+          echo "Using app profile: $APP_PROFILE"
+          echo "Using share extension profile: $SHARE_PROFILE"
           echo "CERT_NAME=$CERT_NAME" >> "$CM_ENV"
-          echo "PROFILE_NAME=$PROFILE_NAME" >> "$CM_ENV"
+          echo "APP_PROFILE=$APP_PROFILE" >> "$CM_ENV"
+          echo "SHARE_PROFILE=$SHARE_PROFILE" >> "$CM_ENV"
       - name: Compute next build number from TestFlight
         script: |
           set -euo pipefail
@@ -95,16 +110,20 @@ workflows:
       - name: Build and sign iOS app
         script: |
           set -euo pipefail
+          # No -p:ApplicationId or -p:CodesignProvision here: global properties also reach the
+          # share extension and would give it the app's bundle id and profile. Each csproj sets
+          # its own id and maps AppProvision / ShareProvision to its own CodesignProvision.
+          # ApplicationVersion is shared on purpose: app and extension build numbers must match.
           dotnet publish "$DOTNET_PROJECT" \
             -f "$TARGET_FRAMEWORK" \
             -c Release \
             -p:ArchiveOnBuild=true \
             -p:BuildIpa=true \
-            -p:ApplicationId="$BUNDLE_ID" \
             -p:ApplicationVersion="$BUILD_NUMBER" \
             -p:RuntimeIdentifier=ios-arm64 \
             -p:CodesignKey="$CERT_NAME" \
-            -p:CodesignProvision="$PROFILE_NAME"
+            -p:AppProvision="$APP_PROFILE" \
+            -p:ShareProvision="$SHARE_PROFILE"
     artifacts:
       - "**/*.ipa"
       - /tmp/xcodebuild_logs/*.log

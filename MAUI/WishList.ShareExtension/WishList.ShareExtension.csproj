@@ -9,6 +9,7 @@
     <RootNamespace>WishList.ShareExtension</RootNamespace>
     <ApplicationId>com.trickypig.wish.share</ApplicationId>
     <ApplicationTitle>Wish List</ApplicationTitle>
+    <!-- Keep the version in step with WishList.csproj: App Store Connect rejects an extension whose version differs from the app. CI passes ApplicationVersion (build number) to both. -->
     <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
     <ApplicationVersion>1</ApplicationVersion>
     <SupportedOSPlatformVersion>15.0</SupportedOSPlatformVersion>
