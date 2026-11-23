@@ -16,16 +16,19 @@ public static class SecureStorageHelper
         if (string.IsNullOrEmpty(legacy))
             return legacy;
 
-        Platforms.iOS.KeychainTokenStore.Set(legacy);
-        SecureStorage.Default.Remove(Constants.TokenKey);
+        // Only drop the old copy once the shared one is saved; if the keychain refuses,
+        // the app keeps working from SecureStorage (the share sheet then asks to log in).
+        if (Platforms.iOS.KeychainTokenStore.Set(legacy))
+            SecureStorage.Default.Remove(Constants.TokenKey);
         return legacy;
     }
 
-    public static Task SetTokenAsync(string token)
+    public static async Task SetTokenAsync(string token)
     {
-        Platforms.iOS.KeychainTokenStore.Set(token);
-        SecureStorage.Default.Remove(Constants.TokenKey);
-        return Task.CompletedTask;
+        if (Platforms.iOS.KeychainTokenStore.Set(token))
+            SecureStorage.Default.Remove(Constants.TokenKey);
+        else
+            await SecureStorage.Default.SetAsync(Constants.TokenKey, token);
     }
 
     public static void RemoveToken()

@@ -19,11 +19,14 @@ public sealed class NotLoggedInException : Exception
 /// </summary>
 public sealed class ShareApiClient
 {
+    const string Unreachable = "Couldn't reach Wish List. Try again.";
     readonly HttpClient _http;
 
     public ShareApiClient(string token, HttpMessageHandler? handler = null)
     {
         _http = handler is null ? new HttpClient() : new HttpClient(handler);
+        // The sheet is waiting on these calls; don't leave it stuck for HttpClient's default 100 s
+        _http.Timeout = TimeSpan.FromSeconds(20);
         _http.BaseAddress = new Uri(Constants.ApiBaseUrl);
         _http.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
         // Fallback header for hosts that strip Authorization (same as ApiService)
@@ -66,7 +69,18 @@ public sealed class ShareApiClient
 
     static async Task<JsonElement> SendAsync(Func<Task<HttpResponseMessage>> send, CancellationToken ct)
     {
-        using var response = await send();
+        HttpResponseMessage sent;
+        try
+        {
+            sent = await send();
+        }
+        catch (TaskCanceledException) when (!ct.IsCancellationRequested)
+        {
+            // HttpClient's timeout, not the user cancelling: report it like any other failed request
+            throw new HttpRequestException(Unreachable);
+        }
+
+        using var response = sent;
         if (response.StatusCode == HttpStatusCode.Unauthorized)
             throw new NotLoggedInException();
 

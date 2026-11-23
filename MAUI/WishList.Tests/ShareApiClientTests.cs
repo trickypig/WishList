@@ -60,6 +60,29 @@ public class ShareApiClientTests
         Assert.Contains("blocked", ex.Message);
     }
 
+    sealed class TimeoutHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) =>
+            throw new TaskCanceledException("The request was canceled due to the configured HttpClient.Timeout");
+    }
+
+    [Fact]
+    public async Task Timeout_ThrowsHttpRequestExceptionNotCancellation()
+    {
+        var ex = await Assert.ThrowsAsync<HttpRequestException>(() =>
+            new ShareApiClient("tok", new TimeoutHandler()).GetListsAsync());
+        Assert.Equal("Couldn't reach Wish List. Try again.", ex.Message);
+    }
+
+    [Fact]
+    public async Task CallerCancel_StillThrowsCancellation()
+    {
+        using var cts = new CancellationTokenSource();
+        cts.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            new ShareApiClient("tok", new TimeoutHandler()).GetListsAsync(cts.Token));
+    }
+
     [Fact]
     public async Task ScrapeHtml_PostsUrlAndHtml()
     {

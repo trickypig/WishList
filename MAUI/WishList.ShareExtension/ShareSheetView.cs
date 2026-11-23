@@ -82,6 +82,10 @@ public sealed class ShareSheetView : UIView
         _name.EditingChanged += (_, _) => { NameEdited?.Invoke(_name.Text ?? ""); _previewName.Text = _name.Text; };
         _price.EditingChanged += (_, _) => PriceEdited?.Invoke(_price.Text ?? "");
         _note.EditingChanged += (_, _) => NoteEdited?.Invoke(_note.Text ?? "");
+        // The clear (×) button doesn't send EditingChanged, so report the cleared value too
+        _name.ShouldClear = _ => { NameEdited?.Invoke(""); _previewName.Text = ""; return true; };
+        _price.ShouldClear = _ => { PriceEdited?.Invoke(""); return true; };
+        _note.ShouldClear = _ => { NoteEdited?.Invoke(""); return true; };
         foreach (var f in new[] { _name, _price, _note })
         {
             f.ShouldReturn = tf => { tf.ResignFirstResponder(); return true; };

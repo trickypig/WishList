@@ -28,20 +28,25 @@ public static class KeychainTokenStore
             : null;
     }
 
-    public static void Set(string token)
+    /// <summary>
+    /// Saves the token; false if the keychain refused (for example a signing/entitlement problem).
+    /// Adds first and updates an existing item in place, so a failure never deletes the current token.
+    /// </summary>
+    public static bool Set(string token)
     {
-        Remove();
+        var data = NSData.FromString(token, NSStringEncoding.UTF8);
         var record = new SecRecord(SecKind.GenericPassword)
         {
             Service = Service,
             Account = Constants.TokenKey,
             // Readable by the share extension whenever the phone has been unlocked once
             Accessible = SecAccessible.AfterFirstUnlock,
-            ValueData = NSData.FromString(token, NSStringEncoding.UTF8)
+            ValueData = data
         };
         var status = SecKeyChain.Add(record);
-        if (status != SecStatusCode.Success)
-            throw new InvalidOperationException($"Couldn't save the login ({status}).");
+        if (status == SecStatusCode.DuplicateItem)
+            status = SecKeyChain.Update(Query(), new SecRecord(SecKind.GenericPassword) { ValueData = data });
+        return status == SecStatusCode.Success;
     }
 
     public static void Remove() => SecKeyChain.Remove(Query());

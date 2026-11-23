@@ -1,0 +1,10 @@
+<Project>
+  <!--
+    The app version, shared by WishList.csproj and its iOS share extension:
+    App Store Connect rejects an extension whose version differs from the app's (ITMS-90473).
+    CI passes ApplicationVersion (the build number) to both.
+  -->
+  <PropertyGroup>
+    <WishDisplayVersion>1.0</WishDisplayVersion>
+  </PropertyGroup>
+</Project>

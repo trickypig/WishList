@@ -40,6 +40,15 @@ public class SharedContentParserTests
         Assert.Equal("Cozy Throw", r.FallbackName);
     }
 
+    [Theory]
+    [InlineData("Shopkins Set https://a.co/d/x", "Shopkins Set")]
+    [InlineData("Shop-Vac 5 Gal https://a.co/d/x", "Shop-Vac 5 Gal")]
+    [InlineData("Check outdoor lights https://a.co/d/x", "Check outdoor lights")]
+    public void Parse_PrefixWordsInsideNamesStay(string text, string expected)
+    {
+        Assert.Equal(expected, SharedContentParser.Parse(null, text).FallbackName);
+    }
+
     [Fact]
     public void Parse_NoLink()
     {

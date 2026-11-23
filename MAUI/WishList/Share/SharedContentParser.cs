@@ -18,7 +18,8 @@ public static partial class SharedContentParser
     [GeneratedRegex(@"https?://[^\s<>""']+", RegexOptions.IgnoreCase)]
     private static partial Regex UrlPattern();
 
-    [GeneratedRegex(@"^\s*(check out this (item|deal|product)\s*:?|check out|shop)\s*", RegexOptions.IgnoreCase)]
+    // Whole words only: "Shopkins", "Shop-Vac" and "Check outdoor…" are product names
+    [GeneratedRegex(@"^\s*(check out this (item|deal|product)\s*:?|check out(?=\s)|shop(?=\s))\s*", RegexOptions.IgnoreCase)]
     private static partial Regex KnownPrefix();
 
     // A store label like "Amazon.com: " (not any text before a colon: product names contain colons too)

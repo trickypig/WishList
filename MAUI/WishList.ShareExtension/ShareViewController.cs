@@ -53,8 +53,13 @@ public sealed class ShareViewController : UIViewController
         {
             await StartAsync();
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (_cts.IsCancellationRequested)
         {
+            // Cancel was tapped; the sheet is already closing
+        }
+        catch (Exception ex)
+        {
+            // async void: anything escaping here would terminate the extension
             _sheet.SetStatus(ex.Message, isError: true);
         }
     }
@@ -94,6 +99,12 @@ public sealed class ShareViewController : UIViewController
         catch (NotLoggedInException)
         {
             ShowNotLoggedIn();
+            return;
+        }
+        catch (HttpRequestException ex)
+        {
+            // Show it now rather than after the details call finishes
+            _sheet.SetStatus(ex.Message, isError: true);
             return;
         }
 
@@ -183,11 +194,19 @@ public sealed class ShareViewController : UIViewController
         {
             ShowNotLoggedIn();
         }
-        catch (Exception ex) when (ex is not OperationCanceledException)
+        catch (OperationCanceledException) when (_cts.IsCancellationRequested)
         {
+            // Cancel was tapped mid-save; the sheet is already closing
+        }
+        catch (Exception ex)
+        {
+            // async void: anything escaping here would terminate the extension
             _sheet.SetStatus(ex.Message, isError: true);
-            _sheet.SetFieldsEnabled(true);
-            _sheet.SetSaveEnabled(true);
+            if (!_done)
+            {
+                _sheet.SetFieldsEnabled(true);
+                _sheet.SetSaveEnabled(true);
+            }
         }
         finally
         {
