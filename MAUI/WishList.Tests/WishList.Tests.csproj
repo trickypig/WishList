@@ -22,6 +22,8 @@
     <Compile Include="../WishList/Models/WishListModel.cs" Link="Shared/WishListModel.cs" />
     <Compile Include="../WishList/Models/ItemGroup.cs" Link="Shared/ItemGroup.cs" />
     <Compile Include="../WishList/Models/ListSection.cs" Link="Shared/ListSection.cs" />
+    <Compile Include="../WishList/Models/ScrapeResult.cs" Link="Shared/ScrapeResult.cs" />
+    <Compile Include="../WishList/Share/*.cs" Link="Shared/Share/%(Filename)%(Extension)" />
   </ItemGroup>
 
 </Project>
