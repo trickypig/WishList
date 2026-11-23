@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- iOS share extension ("Share → Wish List"). Built and embedded by WishList.csproj's iOS build. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0-ios</TargetFramework>
+    <OutputType>Library</OutputType>
+    <IsAppExtension>true</IsAppExtension>
+    <IsWatchExtension>false</IsWatchExtension>
+    <RootNamespace>WishList.ShareExtension</RootNamespace>
+    <ApplicationId>com.trickypig.wish.share</ApplicationId>
+    <ApplicationTitle>Wish List</ApplicationTitle>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+    <SupportedOSPlatformVersion>15.0</SupportedOSPlatformVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+    <!-- CI passes the extension's own profile; a global CodesignProvision would sign it with the app's -->
+    <CodesignProvision Condition="'$(ShareProvision)' != ''">$(ShareProvision)</CodesignProvision>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Safari runs this on the page so the extension gets its HTML (NSExtensionJavaScriptPreprocessingFile) -->
+    <BundleResource Include="GetPage.js" />
+  </ItemGroup>
+
+  <!-- Plain C# shared with the app (no MAUI in an extension) -->
+  <ItemGroup>
+    <Compile Include="../WishList/Share/*.cs" Link="Shared/Share/%(Filename)%(Extension)" />
+    <Compile Include="../WishList/Helpers/Constants.cs" Link="Shared/Constants.cs" />
+    <Compile Include="../WishList/Helpers/AllowedSites.cs" Link="Shared/AllowedSites.cs" />
+    <Compile Include="../WishList/Helpers/BoldPop.cs" Link="Shared/BoldPop.cs" />
+    <Compile Include="../WishList/Models/Item.cs" Link="Shared/Item.cs" />
+    <Compile Include="../WishList/Models/ItemLink.cs" Link="Shared/ItemLink.cs" />
+    <Compile Include="../WishList/Models/ItemGroup.cs" Link="Shared/ItemGroup.cs" />
+    <Compile Include="../WishList/Models/WishListModel.cs" Link="Shared/WishListModel.cs" />
+    <Compile Include="../WishList/Models/ScrapeResult.cs" Link="Shared/ScrapeResult.cs" />
+    <Compile Include="../WishList/Platforms/iOS/KeychainTokenStore.cs" Link="Shared/KeychainTokenStore.cs" />
+  </ItemGroup>
+
+</Project>

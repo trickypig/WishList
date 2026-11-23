@@ -50,7 +50,14 @@
 
 		<!-- iOS: keychain group shared with the share extension (the login token) -->
 		<CodesignEntitlements Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">Platforms/iOS/Entitlements.plist</CodesignEntitlements>
+		<!-- CI passes each bundle's own profile (AppProvision here, ShareProvision in the extension) -->
+		<CodesignProvision Condition="'$(AppProvision)' != ''">$(AppProvision)</CodesignProvision>
 	</PropertyGroup>
+
+	<!-- iOS share extension ("Share → Wish List"), embedded in the app bundle -->
+	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+		<ProjectReference Include="../WishList.ShareExtension/WishList.ShareExtension.csproj" IsAppExtension="true" IsWatchApp="false" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<!-- App Icon -->
