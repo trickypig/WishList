@@ -16,6 +16,14 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <CodesignEntitlements>Entitlements.plist</CodesignEntitlements>
+    <!--
+      Device builds default to the managed-static registrar, whose native stubs call this assembly's
+      AOT code directly. In an extension nothing loads this assembly before iOS creates
+      ShareViewController, so that call jumps to address 0 (EXC_BAD_ACCESS, pc 0, at
+      materializeClientViewControllerWithError). The static registrar resolves the managed method
+      through the runtime, which loads the assembly first.
+    -->
+    <Registrar>static</Registrar>
     <!-- CI passes the extension's own profile; a global CodesignProvision would sign it with the app's -->
     <CodesignProvision Condition="'$(ShareProvision)' != ''">$(ShareProvision)</CodesignProvision>
   </PropertyGroup>
