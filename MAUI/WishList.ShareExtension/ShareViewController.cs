@@ -18,6 +18,7 @@ public sealed class ShareViewController : UIViewController
     const string NotLoggedIn = "Open Wish List and log in first";
     const string NoLists = "Create a list in Wish List first";
     const string NoLink = "No link found to save";
+    static readonly TimeSpan PageLoadTimeout = TimeSpan.FromSeconds(12);
 
     readonly CancellationTokenSource _cts = new();
     ShareSheetView _sheet = null!;
@@ -120,7 +121,10 @@ public sealed class ShareViewController : UIViewController
         if (!_done) _sheet.SetSaveEnabled(true);
     }
 
-    /// <summary>Best effort: the page HTML from Safari, else our server; failures leave the fallback name and link.</summary>
+    /// <summary>
+    /// Best effort: the page HTML from Safari, else the page loaded on this phone, else our server.
+    /// Failures leave the fallback name and link.
+    /// </summary>
     async Task LoadDetailsAsync(string url, string? html)
     {
         _sheet.SetLoadingDetails(true);
@@ -128,7 +132,13 @@ public sealed class ShareViewController : UIViewController
         {
             ScrapeResult? result = null;
             if (!string.IsNullOrEmpty(html))
+            {
                 result = await TryAsync(() => _api!.ScrapeHtmlAsync(url, html, _cts.Token));
+            }
+            else if (await PageLoader.LoadAsync(View!, url, PageLoadTimeout, _cts.Token) is { } page)
+            {
+                result = await TryAsync(() => _api!.ScrapeHtmlAsync(page.Url, page.Html, _cts.Token));
+            }
             result ??= await TryAsync(() => _api!.ScrapeUrlAsync(url, _cts.Token));
             if (result is null || _draft is null) return;
 
